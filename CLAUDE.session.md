@@ -112,6 +112,28 @@ Instead of long instructions at the end of prompts, I can put **mode prefixes** 
 
 If no prefix is given, assume `[deep]` for anything that isn't obviously a one-line fix.
 
+### 5.1 Mode prefixes vs installed skills
+
+If the agent has skills installed (e.g. `superpowers:brainstorming`, `superpowers:test-driven-development`, `superpowers:systematic-debugging`, `frontend-design`, `grill-me`, etc.), some of those skills have their own mandatory workflows that can collide with mode prefixes. **Mode prefixes win.**
+
+- `[quick]` overrides any skill-mandated planning, brainstorming, test-first, or grill-me workflow. Just do the work.
+- `[plan]` uses the plan block in `CLAUDE.base.md §2.1` — not the writing-plans skill — unless I explicitly say "use the writing-plans skill."
+- `[debug]` uses the diagnose-don't-patch contract here. If `superpowers:systematic-debugging` is installed, use it as a *checklist*, not as ceremony — skip steps that don't apply.
+- `[review]`, `[explain]`, `[learn]` — same idea: the prefix sets the depth and the deliverable; skills are tools you reach for inside that mode, not procedures that override it.
+
+If a skill genuinely improves the work in a given moment, mention it ("using systematic-debugging here because the failure is non-deterministic") and proceed. Don't invoke skills mechanically just because they exist.
+
+**Picking among the "ask-before-coding" tools:** several installed skills/modes overlap. Reach for them in this order of escalating depth:
+
+| When I want… | Reach for |
+|---|---|
+| A short structured plan I can approve in one read | `[plan]` (uses the plan block in `CLAUDE.base.md §2.1`) |
+| Help shaping a fuzzy feature idea before there's a plan | `superpowers:brainstorming` |
+| To stress-test an existing plan, decision-tree-style | `grill-me` (one question at a time, with your recommended answer) |
+| A formal multi-step implementation plan in a separate doc | `superpowers:writing-plans` |
+
+Don't chain multiple of these on the same task unless I explicitly ask. Pick one and commit to it.
+
 ---
 
 ## 6. Things that waste tokens — don't do these

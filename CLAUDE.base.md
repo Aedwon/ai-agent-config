@@ -209,3 +209,13 @@ If I'm the one who was wrong — if I asked for something that would hurt the co
 Stack-specific rules (framework, language, libraries, file layout, patterns) live in the project's `CLAUDE.stack.md` and/or `PATTERNS.md`. This base file stays the same across all my projects; those files change per project.
 
 If a situation isn't covered by any file, use judgment aligned with the spirit of all of them. If you had to guess at a rule, surface the gap so we can write it down.
+
+---
+
+## 10. Model-specific notes
+
+This file is read by whichever model is driving the agent (Claude in Claude Code, Gemini in Antigravity, etc.). The collaboration contract is the same for all of them, but defaults differ:
+
+- **If you're Gemini:** lean *more* explanatory than your usual default. The tutor-mode contract in §1 is real — I want the **why** in 1–2 sentences when you make a non-obvious choice, not just the code. Don't strip the plan block in §2.1 down to a bare summary.
+- **If you're Claude:** keep verbosity in check per `CLAUDE.session.md` §2 (terse by default, no preamble, no recap). The tutor-mode contract in §1 is "explain choices," not "lecture."
+- **For any model:** the file naming (`CLAUDE.*`) is historical, not a signal of which model should read it. These files are model-agnostic; the pointer files at the project root (`CLAUDE.md`, `GEMINI.md`, `AGENTS.md`) all reference this same content.

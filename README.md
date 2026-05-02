@@ -6,6 +6,17 @@ Works with Claude Code, Cursor, Windsurf, Antigravity, and any other agent that 
 
 ---
 
+## Compatibility & multi-model use
+
+The content files (`CLAUDE.base.md`, `CLAUDE.session.md`, etc.) are model-agnostic. The `CLAUDE.*` naming is historical, not a signal that only Claude should read them. To make sure the stack is actually loaded regardless of which tool or model you're using:
+
+- Create three pointer files at the project root — `CLAUDE.md`, `GEMINI.md`, and `AGENTS.md` — all containing the same one-screen pointer text (see [`NEW_PROJECT_SETUP.md`](./NEW_PROJECT_SETUP.md) step 3).
+- Different tools discover different filenames: Claude Code reads `CLAUDE.md`, Gemini CLI reads `GEMINI.md`, Antigravity reads `AGENTS.md`. Three pointer files = guaranteed discovery across tools.
+- Per-model behavioral notes (e.g. nudging Gemini to be more explanatory than its default) live in [`CLAUDE.base.md`](./CLAUDE.base.md) §10.
+- If you use installed skills (e.g. `superpowers:*`, `frontend-design`), see [`CLAUDE.session.md`](./CLAUDE.session.md) §5.1 — your file stack outranks skills, and mode prefixes override skill-mandated workflows.
+
+---
+
 ## Why this exists
 
 AI coding agents produce mediocre work by default. Not because the models are weak, but because every session starts with the agent knowing nothing about you, your stack, your conventions, or how you want to collaborate. Most developers paper over this by typing the same instructions at the end of every prompt — which wastes tokens, wastes attention, and still doesn't work reliably.

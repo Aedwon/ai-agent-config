@@ -31,14 +31,16 @@ This system splits them:
 
 ```
 Project root:
-  CLAUDE.md            ← pointer file (tells agent to read the others)
+  CLAUDE.md            ← pointer file for Claude Code
+  GEMINI.md            ← pointer file for Gemini CLI (same content as CLAUDE.md)
+  AGENTS.md            ← pointer file for Antigravity / cross-tool (same content)
   CLAUDE.base.md       ← collaboration rules (identical across all projects)
   CLAUDE.session.md    ← session discipline (identical across all projects)
   CLAUDE.stack.md      ← stack-specific rules (unique per project)
   PATTERNS.md          ← canonical examples (unique per project, grows over time)
 ```
 
-The base and session files you reuse forever. The stack file you fill in once per project. The patterns file grows as you work.
+The base and session files you reuse forever. The stack file you fill in once per project. The patterns file grows as you work. The three pointer files exist because different tools discover different filenames — keep them all so the stack is loaded no matter which tool/model you launch (Claude Code, Antigravity, Gemini CLI, etc.). Per-model behavioral nudges live in `CLAUDE.base.md` §10; skill-vs-mode-prefix arbitration lives in `CLAUDE.session.md` §5.1.
 
 ---
 

@@ -50,12 +50,21 @@ cp ~/claude-templates/CLAUDE.stack.template.md  ./CLAUDE.stack.md
 cp ~/claude-templates/PATTERNS.template.md      ./PATTERNS.md
 ```
 
-### 3. Make a pointer `CLAUDE.md`
+### 3. Make pointer files for each tool
 
-Most AI agents look for a single `CLAUDE.md` at the root. Create one that points to the others:
+Different tools look for different filenames at the project root:
+
+| Tool | File it discovers |
+|---|---|
+| Claude Code (CLI / IDE extensions) | `CLAUDE.md` |
+| Antigravity | `AGENTS.md` (and reads `CLAUDE.md` / `GEMINI.md` if present) |
+| Gemini CLI | `GEMINI.md` |
+| Cursor / Windsurf / others | varies — most also fall back to `AGENTS.md` |
+
+Create **all three** pointer files at the project root with the same content. They're tiny — one source of truth, three discovery paths:
 
 ```markdown
-# CLAUDE.md
+# Agent instructions
 
 This project uses a split instruction system. Read all of these before your first response:
 
@@ -65,9 +74,11 @@ This project uses a split instruction system. Read all of these before your firs
 4. `PATTERNS.md` — canonical patterns as they emerge
 
 If any conflict: base wins on collaboration, stack wins on stack specifics.
+
+The file naming is historical — these files are model-agnostic and apply whether you are Claude, Gemini, or another model. Per-model behavioral notes live at the bottom of `CLAUDE.base.md` (§10).
 ```
 
-That's it. Four files the agent reads, one entry point.
+Save that text as `CLAUDE.md`, `GEMINI.md`, **and** `AGENTS.md` at the project root. Yes, three near-identical files — but they cost nothing and guarantee discovery across tools.
 
 ### 4. Fill in `CLAUDE.stack.md`
 
@@ -92,6 +103,12 @@ First prompt of the first session:
 > "Summarize the four instruction files in 5 bullets each before we start."
 
 If it can't, it didn't read them. Fix that before writing any code.
+
+For ongoing assurance — especially when switching between Claude Code and Antigravity, or between Claude and Gemini in the same project — run a quick check at the start of new sessions:
+
+> "Confirm which instruction files you've loaded for this project and the version of the mode-prefix table."
+
+If the answer is vague or the prefix table is wrong, the pointer file wasn't picked up — restart the session, or paste the relevant file inline.
 
 ---
 
