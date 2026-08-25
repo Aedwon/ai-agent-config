@@ -10,6 +10,67 @@ Python's standard library and requires no paid subscription, specific model,
 global configuration manager, or external skill library. The referenced Matt
 Pocock and Superpowers packages are optional accelerators.
 
+## Quick start: Antigravity IDE
+
+If someone sent you this repository and you use Google Antigravity IDE, this is
+the shortest path. Start with **Level 1** for the universal baseline or **Level
+2** for a normal software project.
+
+Clone the repository, then initialize a manifest for your project:
+
+```sh
+git clone https://github.com/Aedwon/ai-agent-config.git
+cd ai-agent-config
+
+repo_root="$PWD"
+project_root=/absolute/path/to/your-project
+
+python3 -m tooling.config init \
+  --root "$repo_root" \
+  --output "$project_root/ai-agent-config.json"
+```
+
+When prompted:
+
+- choose `antigravity` as the provider adapter;
+- choose Level 1 or Level 2 unless you specifically need the heavier workflows;
+- at Level 2, choose the project type that best matches the repository;
+- create a personal profile only if you want private preferences such as tone,
+  verbosity, or cost routing.
+
+Render the selected configuration to a temporary staging directory:
+
+```sh
+staging_root=$(mktemp -d)
+
+python3 -m tooling.config render \
+  --root "$repo_root" \
+  --manifest "$project_root/ai-agent-config.json" \
+  --output-root "$staging_root"
+```
+
+Review the generated file at:
+
+```text
+$staging_root/.agents/rules/ai-agent-config.md
+```
+
+If it looks correct, install it into the project:
+
+```sh
+mkdir -p "$project_root/.agents/rules"
+cp "$staging_root/.agents/rules/ai-agent-config.md" \
+  "$project_root/.agents/rules/ai-agent-config.md"
+```
+
+Open the project in Antigravity. If the workspace rule is not active
+automatically, enable it through the IDE. Antigravity's documented workspace
+rule location is `.agents/rules/`; the first recognition check is intentionally
+manual because the separate `agy` CLI cannot prove IDE rule discovery.
+
+That is enough to start using the system. External skill packages and global
+configuration are optional.
+
 ## Fastest setup
 
 Cloning the repository changes nothing on your machine. To personalize a
