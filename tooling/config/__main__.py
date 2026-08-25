@@ -67,6 +67,11 @@ def _parser() -> argparse.ArgumentParser:
         help="create project configuration without installing the provider file",
     )
     setup_parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="print the generated provider-file diff before applying",
+    )
+    setup_parser.add_argument(
         "--replace",
         action="store_true",
         help="allow an explicitly confirmed existing provider file to be replaced",
@@ -273,35 +278,63 @@ def _run_setup(args) -> int:
         level = args.level
     elif args.advanced:
         level = _prompt_level()
-    elif args.yes:
-        level = 2
     else:
-        print("\nRecommended setup: Normal")
-        print("  Suitable for most software repositories.")
-        level = 2 if _prompt_yes_no("Use the recommended setup?", default=True) else _prompt_level()
+        level = 2
+        if not args.yes:
+            print("\nSetup")
+            print("  Normal (recommended for most software repositories)")
 
     project_types = list(args.project_type)
     if level in {2, 3} and not project_types:
         detected, evidence = detect_project_type(project)
-        if detected == "software-project":
-            project_types = [detected]
-            print("\nProject type")
-            print("  Software project (safe default; no specialized type detected)")
-        elif args.yes:
-            project_types = [detected]
-        else:
+        if args.advanced and not args.yes:
             print("\nDetected project type")
             print("  {}".format(PROJECT_TYPE_LABELS[detected]))
             if evidence:
                 print("  Based on: {}".format(", ".join(evidence)))
-            if _prompt_yes_no("Use this project type?", default=True):
-                project_types = [detected]
+            selected = _prompt_choice("Project type", PROJECT_TYPE_CHOICES, detected)
+            project_types = [selected]
+        else:
+            project_types = [detected]
+            print("\nProject type")
+            if detected == "software-project":
+                print("  Software project (safe default; no specialized type detected)")
             else:
-                project_types = [
-                    _prompt_choice("Project type", PROJECT_TYPE_CHOICES, "software-project")
-                ]
+                print("  {}".format(PROJECT_TYPE_LABELS[detected]))
+                if evidence:
+                    print("  Based on: {}".format(", ".join(evidence)))
 
+    adapter = load_adapter(source_root, adapter_id)
+    scope = "global" if level == 4 else "project"
+    output_path = adapter.path_for(scope)
     manifest_path = project / "ai-agent-config.json"
+
+    print("\nPlan")
+    print("  Provider       {}".format(adapter.label))
+    print("  Setup          {}".format({1: "Minimal", 2: "Normal", 3: "Agent-heavy", 4: "Global"}[level]))
+    if level in {2, 3}:
+        selected_type = _specialized_project_type(project_types)
+        print("  Project type   {}".format(PROJECT_TYPE_LABELS.get(selected_type, selected_type)))
+    print("  Manifest       {}".format(manifest_path))
+    if level in {2, 3}:
+        print("  Project rules  {}".format(project / "PROJECT_RULES.md"))
+    if scope == "global":
+        print("  Provider file  configuration-only in guided setup")
+    elif args.no_apply:
+        print("  Provider file  not installed (--no-apply)")
+    else:
+        print("  Provider file  {}".format(project / output_path))
+
+    if not args.yes:
+        action = (
+            "Create project configuration?"
+            if args.no_apply or scope == "global"
+            else "Create and install this configuration?"
+        )
+        if not _prompt_yes_no(action, default=True):
+            print("\nNo changes made.")
+            return 0
+
     result = initialize(
         source_root,
         manifest_path,
@@ -309,15 +342,12 @@ def _run_setup(args) -> int:
         level,
         project_types=project_types,
     )
-    _print_configuration_summary(source_root, manifest_path)
     print("\nCreated")
     print("  {}".format(result["manifest"]))
     if result["project_rules"] is not None:
         print("  {}".format(result["project_rules"]))
 
     manifest = load_manifest(manifest_path)
-    adapter = load_adapter(source_root, manifest["adapter"])
-    output_path = adapter.path_for(manifest["scope"])
     if manifest["scope"] == "global":
         print("\nGlobal/provider-native setup is configuration-only here.")
         print("Use render and diff with an explicit global target after review.")
@@ -333,7 +363,7 @@ def _run_setup(args) -> int:
     )
 
     previewed = False
-    if changes and not args.yes and _prompt_yes_no("Preview generated provider-file changes?", default=False):
+    if changes and args.preview:
         print("\n" + changes.rstrip("\n"))
         previewed = True
 
@@ -363,9 +393,6 @@ def _run_setup(args) -> int:
         if not _prompt_yes_no("Apply replacement?", default=False):
             print("\nProvider file was not changed.")
             return 0
-    elif not args.yes and not _prompt_yes_no("Install {}?".format(output_path), default=True):
-        print("\nProvider file was not installed.")
-        return 0
 
     status, installed_path = apply_rendered(
         source_root,
