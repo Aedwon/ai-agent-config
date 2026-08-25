@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "format": "yaml-json-subset",
+  "packages": {
+    "matt-pocock": {
+      "repository": "https://github.com/mattpocock/skills",
+      "revision": "6654f6b60cd9d5be8b54c6fafe44346dabeb3b76",
+      "license": "MIT",
+      "required": false
+    },
+    "superpowers": {
+      "repository": "https://github.com/obra/superpowers",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "package_version": "6.3.0",
+      "license": "MIT",
+      "required": false
+    }
+  },
+  "entries": [
+    {
+      "id": "local.grilling",
+      "capability": "decision-grilling",
+      "strategy": "local_adaptation",
+      "local_path": "skills/grilling",
+      "package": "matt-pocock",
+      "source_path": "skills/productivity/grilling/SKILL.md",
+      "license_file": "LICENSES/matt-pocock-skills-MIT.txt",
+      "trigger": {"mode": "explicit", "owner": "local.grilling"}
+    },
+    {
+      "id": "local.testing-at-seams",
+      "capability": "test-architecture",
+      "strategy": "local_adaptation",
+      "local_path": "skills/testing-at-seams",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/tdd/tests.md",
+      "license_file": "LICENSES/matt-pocock-skills-MIT.txt",
+      "trigger": {"mode": "explicit", "owner": "local.testing-at-seams"}
+    },
+    {
+      "id": "matt.code-review",
+      "capability": "code-review",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/code-review/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.code-review"}
+    },
+    {
+      "id": "matt.codebase-design",
+      "capability": "codebase-design",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/codebase-design/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.codebase-design"}
+    },
+    {
+      "id": "matt.domain-modeling",
+      "capability": "domain-modeling",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/domain-modeling/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.domain-modeling"}
+    },
+    {
+      "id": "matt.handoff",
+      "capability": "handoff-formatting",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/productivity/handoff/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.handoff"}
+    },
+    {
+      "id": "matt.prototype",
+      "capability": "prototype",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/prototype/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.prototype"}
+    },
+    {
+      "id": "matt.research",
+      "capability": "research",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/research/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.research"}
+    },
+    {
+      "id": "matt.resolving-merge-conflicts",
+      "capability": "merge-conflict-resolution",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/resolving-merge-conflicts/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.resolving-merge-conflicts"}
+    },
+    {
+      "id": "matt.to-questionnaire",
+      "capability": "questionnaire-authoring",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/productivity/to-questionnaire/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.to-questionnaire"}
+    },
+    {
+      "id": "matt.to-spec",
+      "capability": "spec-authoring",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/to-spec/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.to-spec"}
+    },
+    {
+      "id": "matt.to-tickets",
+      "capability": "ticket-drafting",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/to-tickets/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.to-tickets"}
+    },
+    {
+      "id": "matt.triage",
+      "capability": "issue-triage",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/triage/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.triage"}
+    },
+    {
+      "id": "matt.wayfinder",
+      "capability": "codebase-navigation",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/wayfinder/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.wayfinder"}
+    },
+    {
+      "id": "matt.wizard",
+      "capability": "human-step-wizard",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/wizard/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.wizard"}
+    },
+    {
+      "id": "matt.setup-matt-pocock-skills",
+      "capability": "optional-package-setup",
+      "strategy": "external_reference",
+      "package": "matt-pocock",
+      "source_path": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "matt.setup-matt-pocock-skills"}
+    },
+    {
+      "id": "superpowers.brainstorming",
+      "capability": "design-workflow",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/brainstorming/SKILL.md",
+      "trigger": {"mode": "package-managed", "owner": "superpowers.brainstorming"}
+    },
+    {
+      "id": "superpowers.writing-plans",
+      "capability": "planning-workflow",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/writing-plans/SKILL.md",
+      "trigger": {"mode": "package-managed", "owner": "superpowers.writing-plans"}
+    },
+    {
+      "id": "superpowers.executing-plans",
+      "capability": "plan-execution",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/executing-plans/SKILL.md",
+      "trigger": {"mode": "package-managed", "owner": "superpowers.executing-plans"}
+    },
+    {
+      "id": "superpowers.subagent-driven-development",
+      "capability": "delegated-plan-execution",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/subagent-driven-development/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "superpowers.subagent-driven-development"}
+    },
+    {
+      "id": "superpowers.test-driven-development",
+      "capability": "implementation-test-cycle",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/test-driven-development/SKILL.md",
+      "trigger": {"mode": "package-managed", "owner": "superpowers.test-driven-development"}
+    },
+    {
+      "id": "superpowers.systematic-debugging",
+      "capability": "debugging-workflow",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/systematic-debugging/SKILL.md",
+      "trigger": {"mode": "package-managed", "owner": "superpowers.systematic-debugging"}
+    },
+    {
+      "id": "superpowers.requesting-code-review",
+      "capability": "review-request",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/requesting-code-review/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "superpowers.requesting-code-review"}
+    },
+    {
+      "id": "superpowers.receiving-code-review",
+      "capability": "review-response",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/receiving-code-review/SKILL.md",
+      "trigger": {"mode": "explicit", "owner": "superpowers.receiving-code-review"}
+    },
+    {
+      "id": "superpowers.verification-before-completion",
+      "capability": "verification-workflow",
+      "strategy": "external_reference",
+      "package": "superpowers",
+      "source_path": "skills/verification-before-completion/SKILL.md",
+      "trigger": {"mode": "package-managed", "owner": "superpowers.verification-before-completion"}
+    }
+  ]
+}
