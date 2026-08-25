@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "request": "inspect the repository and explain the failure",
+      "action": "read",
+      "authorized": true
+    },
+    {
+      "request": "write an implementation plan",
+      "action": "edit source files",
+      "authorized": false
+    },
+    {
+      "request": "run the test suite",
+      "action": "commit changes",
+      "authorized": false
+    },
+    {
+      "request": "prepare a handoff",
+      "action": "push commits",
+      "authorized": false
+    },
+    {
+      "request": "invoke the review workflow",
+      "action": "merge a branch",
+      "authorized": false
+    },
+    {
+      "request": "edit files in the isolated work area",
+      "action": "edit source files",
+      "authorized": true
+    },
+    {
+      "request": "create local commits on the feature branch",
+      "action": "commit changes",
+      "authorized": true
+    },
+    {
+      "request": "deploy the approved release",
+      "action": "deploy",
+      "authorized": true
+    }
+  ]
+}
