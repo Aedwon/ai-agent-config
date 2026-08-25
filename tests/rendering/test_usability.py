@@ -68,6 +68,17 @@ class FirstRunUsabilityTests(unittest.TestCase):
             self.assertIn("# Product Application Overlay", body)
             self.assertIn("Installed AI Agent Config", completed.stdout)
 
+    def test_setup_routes_existing_manifest_to_doctor_or_apply(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            first = self.run_command("setup", str(project), "--adapter", "codex", "--yes")
+            self.assertEqual(first.returncode, 0, first.stderr)
+
+            repeated = self.run_command("setup", str(project), "--adapter", "codex", "--yes")
+            self.assertEqual(repeated.returncode, 2)
+            self.assertIn("use doctor to check it or apply", repeated.stderr)
+
     def test_setup_yes_requires_explicit_provider(self):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "project"
