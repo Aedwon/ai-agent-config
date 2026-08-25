@@ -102,6 +102,17 @@ def _rendered_text(
         return rendered_path.read_text(encoding="utf-8")
 
 
+def _reject_destination_symlinks(root: Path, destination: Path) -> None:
+    relative = destination.relative_to(root)
+    current = root
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ConfigError(
+                "apply destination contains a symlink: {}".format(relative)
+            )
+
+
 def _write_atomic(destination: Path, content: str) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary_name = None
@@ -156,6 +167,7 @@ def apply_rendered(
     except ValueError as error:
         raise ConfigError(str(error)) from error
     destination = resolve_beneath(target, output_path, must_exist=False, label="target path")
+    _reject_destination_symlinks(target, destination)
     if destination.is_symlink():
         raise ConfigError("target path cannot be a symlink: {}".format(output_path))
     if destination.exists() and not destination.is_file():
