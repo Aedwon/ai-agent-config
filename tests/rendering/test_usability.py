@@ -4,8 +4,10 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tests.support import REPOSITORY_ROOT
+from tooling.config.__main__ import main
 from tooling.config.usability import detect_project_type
 
 
@@ -36,6 +38,15 @@ class FirstRunUsabilityTests(unittest.TestCase):
             detected, evidence = detect_project_type(project)
             self.assertEqual(detected, "software-project")
             self.assertEqual(evidence, ())
+
+    def test_interactive_setup_needs_only_provider_and_proceed_for_plain_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            with patch("builtins.input", side_effect=["", ""]):
+                result = main(["setup", str(project)])
+            self.assertEqual(result, 0)
+            self.assertTrue((project / "AGENTS.md").is_file())
 
     def test_setup_yes_creates_normal_config_and_applies_provider_file(self):
         with tempfile.TemporaryDirectory() as directory:
