@@ -526,6 +526,8 @@ def _validate_authorization_cases(root: Path, errors: List[str]) -> None:
 def _validate_migration_map(root: Path, errors: List[str]) -> None:
     relative = "docs/migration-map.json"
     data = _read_json(root, relative, errors)
+    if data and data.get("version") != 1:
+        errors.append("{}: version must be 1".format(relative))
     sources = data.get("sources") if data else None
     if not isinstance(sources, list):
         errors.append("{}: sources must be an array".format(relative))

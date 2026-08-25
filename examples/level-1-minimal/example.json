@@ -1,6 +1,7 @@
 {
   "version": 1,
   "level": 1,
+  "scope": "project",
   "adapter": "codex",
   "output": "AGENTS.md",
   "components": [

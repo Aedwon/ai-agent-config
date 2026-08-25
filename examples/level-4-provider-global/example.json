@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "level": 4,
+  "scope": "global",
+  "adapter": "codex",
+  "output": ".codex/AGENTS.md",
+  "components": [
+    "core/precedence.md",
+    "core/agent-contract.md"
+  ],
+  "installation": "manual-or-provider-native",
+  "recognition": "opt-in",
+  "installed_state": "generated"
+}

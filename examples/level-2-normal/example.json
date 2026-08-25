@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "level": 2,
+  "scope": "project",
+  "adapter": "codex",
+  "output": "AGENTS.md",
+  "project_files": [
+    "templates/project/PROJECT_RULES.md",
+    "templates/project/DECISIONS.md",
+    "project-types/software-project.md",
+    "project-types/product-app.md"
+  ],
+  "workflows": [
+    "workflows/planning.md",
+    "workflows/implementation.md",
+    "workflows/verification.md"
+  ],
+  "external_skills": "optional",
+  "global_configuration": false
+}

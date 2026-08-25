@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "level": 3,
+  "scope": "project",
+  "adapter": "codex",
+  "output": "AGENTS.md",
+  "project_files": [
+    "templates/project/PROJECT_RULES.md",
+    "templates/project/DECISIONS.md",
+    "templates/project/HANDOFF.md",
+    "project-types/software-project.md"
+  ],
+  "workflows": [
+    "workflows/planning.md",
+    "workflows/delegation.md",
+    "workflows/code-review.md",
+    "workflows/verification.md",
+    "workflows/handoff.md"
+  ],
+  "optional_skills": [
+    "testing-at-seams"
+  ],
+  "isolation": "worktree-when-warranted",
+  "global_configuration": false
+}

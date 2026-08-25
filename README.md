@@ -1,107 +1,108 @@
-# claude-templates
+# AI Agent Config
 
-A portable instruction system for working with AI coding agents. Stack-agnostic, reusable across any software project, designed for developers who direct AI agents to scaffold, iterate, and ship production code.
+AI Agent Config is a portable policy and workflow system for coding agents. It
+keeps one provider-neutral source of truth, then renders the entry filename that
+each supported agent discovers.
 
-Works with Claude Code, Cursor, Windsurf, Antigravity, and any other agent that reads `CLAUDE.md`-style instruction files.
+The repository solves two recurring problems: durable rules tend to become tied
+to one provider, and copied instruction files silently drift. Here, universal
+policy, project rules, workflows, personal preferences, and provider discovery
+stay separate.
 
----
+It works with Python's standard library. It requires no paid subscription,
+specific model, global configuration manager, or external skill library. The
+referenced Matt Pocock and Superpowers packages are optional accelerators.
 
-## Compatibility & multi-model use
+## Fastest setup: Level 1
 
-The content files (`CLAUDE.base.md`, `CLAUDE.session.md`, etc.) are model-agnostic. The `CLAUDE.*` naming is historical, not a signal that only Claude should read them. To make sure the stack is actually loaded regardless of which tool or model you're using:
+Level 1 produces one provider-discovered project file containing the universal
+baseline and minimal project rules.
 
-- Create three pointer files at the project root — `CLAUDE.md`, `GEMINI.md`, and `AGENTS.md` — all containing the same one-screen pointer text (see [`NEW_PROJECT_SETUP.md`](./NEW_PROJECT_SETUP.md) step 3).
-- Different tools discover different filenames: Claude Code reads `CLAUDE.md`, Gemini CLI reads `GEMINI.md`, Antigravity reads `AGENTS.md`. Three pointer files = guaranteed discovery across tools.
-- Per-model behavioral notes (e.g. nudging Gemini to be more explanatory than its default) live in [`CLAUDE.base.md`](./CLAUDE.base.md) §10.
-- If you use installed skills (e.g. `superpowers:*`, `frontend-design`), see [`CLAUDE.session.md`](./CLAUDE.session.md) §5.1 — your file stack outranks skills, and mode prefixes override skill-mandated workflows.
+```sh
+repo_root=/absolute/path/to/ai-agent-config
+project_root=/absolute/path/to/your-project
+staging_root=$(mktemp -d)
 
----
-
-## Why this exists
-
-AI coding agents produce mediocre work by default. Not because the models are weak, but because every session starts with the agent knowing nothing about you, your stack, your conventions, or how you want to collaborate. Most developers paper over this by typing the same instructions at the end of every prompt — which wastes tokens, wastes attention, and still doesn't work reliably.
-
-This repo is the system I use to fix that. Four small files at the root of a project, plus a couple of templates to fill in per project, and the agent walks in already knowing how to work with me.
-
----
-
-## What's in here
-
-| File | Purpose |
-|---|---|
-| [`CLAUDE.base.md`](./CLAUDE.base.md) | Collaboration contract — how the agent and I work together. Never changes across projects. |
-| [`CLAUDE.session.md`](./CLAUDE.session.md) | Token and session discipline for long sessions. Includes mode prefixes (`[deep]`, `[quick]`, `[plan]`, etc.). |
-| [`CLAUDE.stack.template.md`](./CLAUDE.stack.template.md) | Template for stack-specific rules (framework, language, libraries). Copy + fill in per project. |
-| [`PATTERNS.template.md`](./PATTERNS.template.md) | Template for canonical project patterns. Copy + grow as the project develops. |
-| [`NEW_PROJECT_SETUP.md`](./NEW_PROJECT_SETUP.md) | Step-by-step playbook for spinning up a new project with this system. |
-| [`SYSTEM_GUIDE.md`](./SYSTEM_GUIDE.md) | Detailed guide to the system itself (how the files relate, philosophy, maintenance). |
-
----
-
-## How it works in 30 seconds
-
-Most people cram everything into one giant `CLAUDE.md`. This system splits it into layers:
-
-```
-Project root:
-  CLAUDE.md           ← pointer file (tells agent to read the others)
-  CLAUDE.base.md      ← collaboration rules (identical across all projects)
-  CLAUDE.session.md   ← session discipline (identical across all projects)
-  CLAUDE.stack.md     ← stack-specific rules (unique per project)
-  PATTERNS.md         ← canonical examples (unique per project, grows over time)
+python3 -m tooling.config validate --root "$repo_root"
+python3 -m tooling.config render \
+  --root "$repo_root" \
+  --adapter codex \
+  --output-root "$staging_root"
+python3 -m tooling.config diff \
+  --root "$repo_root" \
+  --adapter codex \
+  --target-root "$project_root"
 ```
 
-The base and session files get reused forever. The stack file gets filled in once per project. The patterns file grows as the project develops.
+Review the staged `AGENTS.md`, then copy it into the project yourself. Replace
+`codex` with `claude`, `gemini`, `antigravity`, or `generic`. `diff` is
+read-only and exits with status 1 when it finds a difference.
 
----
+See the complete [Level 1 example](examples/level-1-minimal/README.md) and
+[adoption guide](docs/adoption.md).
 
-## Quick start
+## Four adoption levels
 
-1. Clone or download this repo
-2. Copy the four core files into a new project root
-3. Rename `CLAUDE.stack.template.md` → `CLAUDE.stack.md` and `PATTERNS.template.md` → `PATTERNS.md`
-4. Fill in `CLAUDE.stack.md` with your stack details
-5. Create a pointer `CLAUDE.md` at the root (example in [`NEW_PROJECT_SETUP.md`](./NEW_PROJECT_SETUP.md))
-6. First prompt: *"Summarize the four instruction files in 5 bullets each before we start."*
+1. **Minimal:** one project entry with the universal baseline. No external
+   skills, global mutation, or planning ceremony.
+2. **Normal project:** add project rules, a project-type overlay, and the local
+   workflows that fit the work.
+3. **Agent-heavy:** add plans, decisions, delegation, isolated worktrees,
+   deeper review, and optional skills where the added control is worthwhile.
+4. **Provider-native/global:** render the universal core to an explicit staging
+   root, inspect the exact diff, install manually, and run an opt-in recognition
+   probe. Installed state remains generated state.
 
-Full walkthrough in [`NEW_PROJECT_SETUP.md`](./NEW_PROJECT_SETUP.md).
+Adopt only the level that pays for itself. Levels 1 and 2 are fully standalone.
 
----
+## How the layers fit
 
-## The principles behind it
+- `core/` defines universal authorization, precedence, evidence, delegation,
+  and completion rules.
+- `templates/` holds minimal and project-owned files.
+- `project-types/` adds only reusable domain deltas. Start with the software
+  baseline, then select a relevant overlay.
+- `workflows/` documents portable ways to design, plan, implement, debug,
+  review, delegate, verify, and hand off work.
+- `profiles/` shows how to keep personal style preferences private and below
+  project rules.
+- `adapters/` records discovery paths and renders thin provider entry files.
+- `skills/` catalogs optional external references and two attributed local
+  adaptations. Core operation does not load them.
 
-**Rules beat reminders.** If you're typing the same instruction at the end of prompts, it belongs in a file. Every reminder is a tax.
+Put repository-specific commands, boundaries, and conventions in a copy of
+`templates/project/PROJECT_RULES.md`. Put stable product-type concerns in a
+selected `project-types/` overlay. Put personal tone, formatting, and routing
+preferences in a private profile, not the universal core.
 
-**Ask on ambiguity, decide on tactics.** A good agent asks about branch points and decides on naming. A bad agent asks about naming and decides on architecture. Files enforce the right split.
+## Supported adapters
 
-**Context is scarce.** Long sessions fail not because models are bad but because context decays. Explicit session management (handoffs, checkpoints, mode prefixes) is how you survive marathon work.
+| Adapter | Project output | Global output beneath an explicit root |
+| --- | --- | --- |
+| Generic | `AGENT_RULES.md` | `AGENT_RULES.md` |
+| Codex | `AGENTS.md` | `.codex/AGENTS.md` |
+| Claude Code | `CLAUDE.md` | `.claude/CLAUDE.md` |
+| Gemini CLI | `GEMINI.md` | `.gemini/GEMINI.md` |
+| Google Antigravity IDE | `.agents/rules/ai-agent-config.md` | `.gemini/GEMINI.md` |
 
----
+Adapters change discovery mechanics, not policy semantics. The renderer always
+requires an explicit source root and staging root. It does not discover a home
+directory, install configuration, copy credentials, or manage provider caches
+and plug-ins.
 
-## The one habit change that matters most
+## Documentation
 
-Stop typing instructions at the end of prompts. Start using **mode prefixes at the beginning**:
+- [Adoption](docs/adoption.md)
+- [Architecture and precedence](docs/architecture.md)
+- [Safe configuration management](docs/configuration-management.md)
+- [Dependencies and discovery evidence](docs/dependencies.md)
+- [Validation and recognition](docs/validation.md)
+- [Migration from v1](docs/migration-v1-to-v2.md)
 
-- `[quick]` — trivial task, skip the plan
-- `[deep]` — non-trivial, plan first
-- `[plan]` — plan only, no code
-- `[review]` — review existing code, don't change it
-- `[debug]` — diagnose, don't patch
-- `[explain]` — explain existing code
-- `[learn]` — teach me the concept
+## License and third-party material
 
-One line replaces a paragraph. Defined in [`CLAUDE.session.md`](./CLAUDE.session.md).
-
----
-
-## License & use
-
-Use these however you want. Fork, adapt, strip for parts, rewrite entirely. The templates reflect my preferences — a developer should absolutely shape their own version over time.
-
-If you build on top of this, I'd love to see it.
-
----
-
-## Credits
-
-Developed iteratively through a long conversation with Claude (Anthropic), refined against real use of agent-first IDEs. The structure is mine; the prose is largely Claude's; the accumulated opinions are earned.
+Original v2 material is MIT licensed, copyright Aerol Dwayne Balayon.
+`THIRD_PARTY_NOTICES.md` identifies the optional upstream packages and local
+adaptations. Retained upstream MIT notices live in `LICENSES/`. External
+references are pinned to immutable revisions in `skills/catalog.yaml`; the
+unchanged skill bodies are not vendored.

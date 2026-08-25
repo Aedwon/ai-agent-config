@@ -93,6 +93,43 @@ class MigrationAndExampleTests(unittest.TestCase):
         self.assertFalse(manifest["external_skills"])
         self.assertFalse(manifest["global_configuration"])
 
+    def test_every_adoption_level_has_a_renderable_example(self):
+        examples = {
+            "level-1-minimal": (1, "project", "AGENTS.md"),
+            "level-2-normal": (2, "project", "AGENTS.md"),
+            "level-3-agent-heavy": (3, "project", "AGENTS.md"),
+            "level-4-provider-global": (4, "global", ".codex/AGENTS.md"),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            staging = Path(directory)
+            for name, expected in examples.items():
+                with self.subTest(example=name):
+                    example_root = REPOSITORY_ROOT / "examples" / name
+                    self.assertTrue((example_root / "README.md").is_file())
+                    manifest = json.loads(
+                        (example_root / "example.json").read_text(encoding="utf-8")
+                    )
+                    level, scope, output = expected
+                    self.assertEqual(manifest["level"], level)
+                    self.assertEqual(manifest["scope"], scope)
+                    self.assertEqual(manifest["output"], output)
+                    for field in ("components", "project_files", "workflows"):
+                        for relative in manifest.get(field, []):
+                            self.assertTrue(
+                                (REPOSITORY_ROOT / relative).is_file(),
+                                "{} references missing {}".format(name, relative),
+                            )
+                    rendered = render(
+                        REPOSITORY_ROOT,
+                        manifest["adapter"],
+                        staging / name,
+                        scope=scope,
+                    )
+                    self.assertEqual(
+                        rendered[0].relative_to((staging / name).resolve()).as_posix(),
+                        output,
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
