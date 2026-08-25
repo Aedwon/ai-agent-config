@@ -1,10 +1,17 @@
 # Project Rules
 
-The universal core remains active. Record only project-specific additions here.
+The universal core remains active. This file is reserved for stable
+project-specific additions. No additional project rules are defined by the
+default template.
+
+<!--
+Maintainer template — replace this comment with concrete rules only when the
+project needs them. Delete unused sections instead of leaving instructions for
+an agent to fill in.
 
 ## Product and users
 
-Describe the product boundary, intended users, and consequential failure modes.
+Record the product boundary, intended users, and consequential failure modes.
 
 ## Architecture
 
@@ -18,4 +25,5 @@ changed behavior.
 ## Mutations
 
 Record project-specific restrictions for data, infrastructure, release, and
-external systems. This section may narrow authority but cannot broaden it.
+external systems. Project rules may narrow authority but cannot broaden it.
+-->
