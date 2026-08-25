@@ -1,0 +1,37 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify pull request
+        if: github.event_name == 'pull_request'
+        run: python3 -m tooling.verify --diff-base "${{ github.event.pull_request.base.sha }}"
+
+      - name: Verify main update
+        if: github.event_name == 'push'
+        run: python3 -m tooling.verify --diff-base "${{ github.event.before }}"
+
+      - name: Verify manual run
+        if: github.event_name == 'workflow_dispatch'
+        run: python3 -m tooling.verify
