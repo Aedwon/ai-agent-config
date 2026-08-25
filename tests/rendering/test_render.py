@@ -63,6 +63,38 @@ class RenderingTests(unittest.TestCase):
 
             self.assertEqual(first.read_bytes(), second.read_bytes())
 
+    def test_global_render_uses_only_universal_core_and_known_global_path(self):
+        render = self.load_api()
+        expected_paths = {
+            "generic": "AGENT_RULES.md",
+            "codex": ".codex/AGENTS.md",
+            "claude": ".claude/CLAUDE.md",
+            "gemini": ".gemini/GEMINI.md",
+            "antigravity": ".gemini/GEMINI.md",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for adapter_id, expected_path in expected_paths.items():
+                with self.subTest(adapter=adapter_id):
+                    try:
+                        rendered = render(
+                            REPOSITORY_ROOT,
+                            adapter_id,
+                            base / adapter_id,
+                            scope="global",
+                        )
+                    except TypeError as error:
+                        self.fail("global render scope is missing: {}".format(error))
+
+                    self.assertEqual(
+                        rendered,
+                        [(base / adapter_id / expected_path).resolve()],
+                    )
+                    body = rendered[0].read_text(encoding="utf-8")
+                    self.assertIn("# Precedence", body)
+                    self.assertIn("# Agent Contract", body)
+                    self.assertNotIn("# Project Agent Rules", body)
+
     def test_rendering_does_not_mutate_source(self):
         render = self.load_api()
         before = source_digest(REPOSITORY_ROOT)

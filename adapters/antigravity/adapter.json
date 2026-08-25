@@ -22,6 +22,24 @@
     "path": ".agents/rules/ai-agent-config.md",
     "category": "workspace-rule"
   },
+  "global": {
+    "discovery": {
+      "kind": "automatic",
+      "scope": "global",
+      "path": ".gemini/GEMINI.md",
+      "official_sources": [
+        {
+          "title": "Getting Started with Antigravity IDE",
+          "url": "https://codelabs.developers.google.com/getting-started-agy-ide",
+          "accessed": "2026-08-25"
+        }
+      ]
+    },
+    "output": {
+      "path": ".gemini/GEMINI.md",
+      "category": "global-instructions"
+    }
+  },
   "recognition": {
     "mode": "command",
     "executable_env": "AI_AGENT_CONFIG_ANTIGRAVITY_EXECUTABLE",

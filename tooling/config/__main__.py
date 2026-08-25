@@ -21,11 +21,13 @@ def _parser() -> argparse.ArgumentParser:
     render_parser = commands.add_parser("render", help="render one adapter into staging")
     render_parser.add_argument("--root", type=Path, required=True)
     render_parser.add_argument("--adapter", required=True)
+    render_parser.add_argument("--scope", choices=("project", "global"), default="project")
     render_parser.add_argument("--output-root", type=Path, required=True)
 
     diff_parser = commands.add_parser("diff", help="compare staging with a target")
     diff_parser.add_argument("--root", type=Path, required=True)
     diff_parser.add_argument("--adapter", required=True)
+    diff_parser.add_argument("--scope", choices=("project", "global"), default="project")
     diff_parser.add_argument("--target-root", type=Path, required=True)
     return parser
 
@@ -42,11 +44,11 @@ def main(arguments: Optional[List[str]] = None) -> int:
             print("OK")
             return 0
         if args.command == "render":
-            for path in render(args.root, args.adapter, args.output_root):
+            for path in render(args.root, args.adapter, args.output_root, scope=args.scope):
                 print(path)
             return 0
         if args.command == "diff":
-            output = diff(args.root, args.adapter, args.target_root)
+            output = diff(args.root, args.adapter, args.target_root, scope=args.scope)
             if output:
                 sys.stdout.write(output)
                 return 1

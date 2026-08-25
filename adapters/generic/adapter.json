@@ -16,6 +16,18 @@
     "path": "AGENT_RULES.md",
     "category": "project-instructions"
   },
+  "global": {
+    "discovery": {
+      "kind": "manual",
+      "scope": "global",
+      "path": "AGENT_RULES.md",
+      "official_sources": []
+    },
+    "output": {
+      "path": "AGENT_RULES.md",
+      "category": "global-instructions"
+    }
+  },
   "recognition": {
     "mode": "manual",
     "instructions": "Configure the target agent to load AGENT_RULES.md, append a unique AI_AGENT_CONFIG_RECOGNITION value in a temporary project, and ask it to report that value."

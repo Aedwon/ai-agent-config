@@ -22,6 +22,24 @@
     "path": "CLAUDE.md",
     "category": "project-instructions"
   },
+  "global": {
+    "discovery": {
+      "kind": "automatic",
+      "scope": "global",
+      "path": ".claude/CLAUDE.md",
+      "official_sources": [
+        {
+          "title": "How Claude remembers your project",
+          "url": "https://code.claude.com/docs/en/memory",
+          "accessed": "2026-08-25"
+        }
+      ]
+    },
+    "output": {
+      "path": ".claude/CLAUDE.md",
+      "category": "global-instructions"
+    }
+  },
   "recognition": {
     "mode": "command",
     "executable_env": "AI_AGENT_CONFIG_CLAUDE_EXECUTABLE",

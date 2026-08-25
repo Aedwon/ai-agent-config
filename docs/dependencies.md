@@ -16,21 +16,26 @@ repositories on August 25, 2026.
 
 ## Provider discovery research
 
-Adapter metadata records project-level discovery only. No adapter installs or
-changes global configuration.
+Adapter metadata records project and global discovery. Rendering always targets
+a caller-declared staging root. It never discovers or changes a home directory,
+installs configuration, or writes credentials, caches, or plug-ins.
 
 - Codex reads `AGENTS.md` from the project root toward the working directory.
+  Its global file is `.codex/AGENTS.md`.
   Source reviewed August 25, 2026: [official OpenAI
   documentation](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 - Claude Code loads project instructions from `./CLAUDE.md` or
   `./.claude/CLAUDE.md` and layers directory instructions. This project uses
-  the root form. Source reviewed August 25, 2026: [Claude Code
+  the root form. Its global file is `.claude/CLAUDE.md`. Source reviewed August
+  25, 2026: [Claude Code
   documentation](https://code.claude.com/docs/en/memory).
 - Gemini CLI uses hierarchical `GEMINI.md` context by default. Source updated
-  June 18, 2026 and reviewed August 25, 2026: [Gemini CLI
+  June 18, 2026 and reviewed August 25, 2026. Its global file is
+  `.gemini/GEMINI.md`: [Gemini CLI
   documentation](https://geminicli.com/docs/cli/gemini-md/).
-- Antigravity IDE stores workspace rules under `.agents/rules/`. Source
-  reviewed August 25, 2026: [Google
+- Antigravity IDE stores workspace rules under `.agents/rules/` and uses
+  `.gemini/GEMINI.md` for global instructions. Source reviewed August 25, 2026:
+  [Google
   Codelabs](https://codelabs.developers.google.com/getting-started-agy-ide).
 - Generic agents have no shared automatic discovery convention. The generic
   adapter therefore produces a manual integration file and makes no automatic

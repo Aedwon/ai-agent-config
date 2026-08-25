@@ -23,6 +23,25 @@
     "path": "GEMINI.md",
     "category": "project-instructions"
   },
+  "global": {
+    "discovery": {
+      "kind": "automatic",
+      "scope": "global",
+      "path": ".gemini/GEMINI.md",
+      "official_sources": [
+        {
+          "title": "Provide context with GEMINI.md files",
+          "url": "https://geminicli.com/docs/cli/gemini-md/",
+          "accessed": "2026-08-25",
+          "documentation_date": "2026-06-18"
+        }
+      ]
+    },
+    "output": {
+      "path": ".gemini/GEMINI.md",
+      "category": "global-instructions"
+    }
+  },
   "recognition": {
     "mode": "command",
     "executable_env": "AI_AGENT_CONFIG_GEMINI_EXECUTABLE",

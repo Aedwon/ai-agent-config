@@ -11,11 +11,17 @@ from tooling.config.paths import ConfigError, prepare_output_root, resolve_benea
 from tooling.config.validate import validate
 
 
-CANONICAL_SOURCES = (
-    "core/precedence.md",
-    "core/agent-contract.md",
-    "templates/minimal/AGENT_RULES.md",
-)
+CANONICAL_SOURCES = {
+    "project": (
+        "core/precedence.md",
+        "core/agent-contract.md",
+        "templates/minimal/AGENT_RULES.md",
+    ),
+    "global": (
+        "core/precedence.md",
+        "core/agent-contract.md",
+    ),
+}
 UNRESOLVED = re.compile(r"\{\{[^{}\n]+\}\}")
 
 
@@ -28,11 +34,13 @@ def _markdown_body(text: str) -> str:
     return text[closing + 5 :].strip()
 
 
-def canonical_bundle(root: Path) -> str:
+def canonical_bundle(root: Path, scope: str = "project") -> str:
     """Build the minimal canonical policy bundle in fixed order."""
 
+    if scope not in CANONICAL_SOURCES:
+        raise ConfigError("scope must be project or global")
     sections = []
-    for relative in CANONICAL_SOURCES:
+    for relative in CANONICAL_SOURCES[scope]:
         path = resolve_beneath(root, relative, must_exist=True, label=relative)
         try:
             sections.append(_markdown_body(path.read_text(encoding="utf-8")))
@@ -76,7 +84,12 @@ def _write_atomic(destination: Path, content: str) -> None:
                 pass
 
 
-def render(root: Path, adapter_id: str, output_root: Path) -> List[Path]:
+def render(
+    root: Path,
+    adapter_id: str,
+    output_root: Path,
+    scope: str = "project",
+) -> List[Path]:
     """Render one validated adapter into caller-declared staging."""
 
     source_root = Path(root).resolve(strict=True)
@@ -97,7 +110,13 @@ def render(root: Path, adapter_id: str, output_root: Path) -> List[Path]:
     if template.count("{{CONTENT}}") != 1:
         raise ConfigError("adapter template must contain {{CONTENT}} exactly once")
 
-    rendered = template.replace("{{CONTENT}}", canonical_bundle(source_root).rstrip("\n"))
+    try:
+        output_path = adapter.path_for(scope)
+    except ValueError as error:
+        raise ConfigError(str(error)) from error
+    rendered = template.replace(
+        "{{CONTENT}}", canonical_bundle(source_root, scope).rstrip("\n")
+    )
     unresolved = UNRESOLVED.search(rendered)
     if unresolved:
         raise ConfigError("rendered output contains unresolved placeholder '{}'".format(unresolved.group(0)))
@@ -107,7 +126,7 @@ def render(root: Path, adapter_id: str, output_root: Path) -> List[Path]:
     staging_root = prepare_output_root(source_root, output_root)
     destination = resolve_beneath(
         staging_root,
-        adapter.output_path,
+        output_path,
         must_exist=False,
         label="adapter output path",
     )

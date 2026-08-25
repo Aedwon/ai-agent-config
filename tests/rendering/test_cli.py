@@ -71,6 +71,25 @@ class CommandLineTests(unittest.TestCase):
             self.assertIn("--- target/AGENTS.md", completed.stdout)
             self.assertEqual(list(target.iterdir()), [])
 
+    def test_render_command_supports_explicit_global_staging(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "staging"
+
+            completed = self.run_command(
+                "render",
+                "--root",
+                str(REPOSITORY_ROOT),
+                "--adapter",
+                "codex",
+                "--scope",
+                "global",
+                "--output-root",
+                str(output),
+            )
+
+            self.assertEqual(completed.returncode, 0)
+            self.assertTrue((output / ".codex" / "AGENTS.md").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

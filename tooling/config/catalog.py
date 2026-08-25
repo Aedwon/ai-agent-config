@@ -41,6 +41,9 @@ def load_adapter(root: Path, adapter_id: str) -> Adapter:
         discovery = data["discovery"]
         template = data["template"]
         output = data["output"]
+        global_target = data["global"]
+        global_discovery = global_target["discovery"]
+        global_output = global_target["output"]
         sources = tuple(discovery["official_sources"])
         return Adapter(
             adapter_id=data["id"],
@@ -50,6 +53,11 @@ def load_adapter(root: Path, adapter_id: str) -> Adapter:
             template_path=template["path"],
             output_path=output["path"],
             output_category=output["category"],
+            global_discovery_kind=global_discovery["kind"],
+            global_discovery_path=global_discovery["path"],
+            global_output_path=global_output["path"],
+            global_output_category=global_output["category"],
+            global_official_sources=tuple(global_discovery["official_sources"]),
             official_sources=sources,
             recognition=dict(data["recognition"]),
         )

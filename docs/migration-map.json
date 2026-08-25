@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "CLAUDE.base.md",
+      "concepts": [
+        {
+          "name": "evidence, pushback, and mutation safety",
+          "disposition": "REWRITE",
+          "destination": "core/agent-contract.md",
+          "reason": "The universal rules survive without personal role, style, or runtime assumptions."
+        },
+        {
+          "name": "personal tutor persona and production defaults",
+          "disposition": "DROP",
+          "destination": null,
+          "reason": "Personal teaching and product preferences belong in a private profile or project overlay."
+        }
+      ]
+    },
+    {
+      "path": "CLAUDE.session.md",
+      "concepts": [
+        {
+          "name": "long-session checkpoints and continuation state",
+          "disposition": "KEEP",
+          "destination": "workflows/handoff.md",
+          "reason": "Verified continuation state remains useful across runtimes."
+        },
+        {
+          "name": "mode-prefix precedence",
+          "disposition": "DROP",
+          "destination": null,
+          "reason": "Explicit user instructions and selected workflows replace a private prefix grammar."
+        }
+      ]
+    },
+    {
+      "path": "CLAUDE.stack.template.md",
+      "concepts": [
+        {
+          "name": "stack and product-specific rules",
+          "disposition": "REWRITE",
+          "destination": "project-types/README.md",
+          "reason": "Reusable overlays and project rules replace one monolithic stack template."
+        }
+      ]
+    },
+    {
+      "path": "PATTERNS.template.md",
+      "concepts": [
+        {
+          "name": "durable project patterns",
+          "disposition": "KEEP",
+          "destination": "templates/project/PROJECT_RULES.md",
+          "reason": "Projects still record stable boundaries and conventions near their source."
+        }
+      ]
+    },
+    {
+      "path": "NEW_PROJECT_SETUP.md",
+      "concepts": [
+        {
+          "name": "portable project adoption",
+          "disposition": "REWRITE",
+          "destination": "docs/adoption.md",
+          "reason": "Four adoption levels replace a single personal setup checklist."
+        },
+        {
+          "name": "duplicated runtime pointer files",
+          "disposition": "REFERENCE",
+          "destination": "docs/migration-v1-to-v2.md",
+          "reason": "The historical pointers explain migration but no longer define canonical policy."
+        }
+      ]
+    },
+    {
+      "path": "SYSTEM_GUIDE.md",
+      "concepts": [
+        {
+          "name": "layering and operating guidance",
+          "disposition": "REWRITE",
+          "destination": "docs/architecture.md",
+          "reason": "The architecture guide now separates canonical sources, profiles, overlays, adapters, and generated state."
+        },
+        {
+          "name": "routine automatic commits",
+          "disposition": "DROP",
+          "destination": null,
+          "reason": "A completed task or test pass does not grant Git mutation authority."
+        }
+      ]
+    }
+  ]
+}

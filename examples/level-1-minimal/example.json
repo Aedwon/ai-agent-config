@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "level": 1,
+  "adapter": "codex",
+  "output": "AGENTS.md",
+  "components": [
+    "core/precedence.md",
+    "core/agent-contract.md",
+    "templates/minimal/AGENT_RULES.md"
+  ],
+  "external_skills": false,
+  "global_configuration": false
+}

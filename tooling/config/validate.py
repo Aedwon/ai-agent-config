@@ -17,6 +17,8 @@ REQUIRED_FILES = (
     "core/precedence.md",
     "skills/catalog.yaml",
     "adapters/catalog.schema.json",
+    "docs/migration-map.json",
+    "examples/level-1-minimal/example.json",
     "tests/fixtures/authorization-cases.json",
 )
 REQUIRED_ADAPTERS = {"generic", "codex", "claude", "gemini", "antigravity"}
@@ -71,7 +73,15 @@ ADAPTER_REQUIRED = {
     "discovery",
     "template",
     "output",
+    "global",
     "recognition",
+}
+GLOBAL_OUTPUT_PATHS = {
+    "generic": "AGENT_RULES.md",
+    "codex": ".codex/AGENTS.md",
+    "claude": ".claude/CLAUDE.md",
+    "gemini": ".gemini/GEMINI.md",
+    "antigravity": ".gemini/GEMINI.md",
 }
 FORBIDDEN_DESTINATION_PREFIXES = (
     ".cache/",
@@ -88,6 +98,20 @@ FORBIDDEN_DESTINATION_PARTS = {
     "secrets",
     "id_rsa",
     "id_ed25519",
+}
+LEGACY_SOURCES = {
+    "CLAUDE.base.md",
+    "CLAUDE.session.md",
+    "CLAUDE.stack.template.md",
+    "PATTERNS.template.md",
+    "NEW_PROJECT_SETUP.md",
+    "SYSTEM_GUIDE.md",
+}
+MIGRATION_DISPOSITIONS = {"KEEP", "REWRITE", "REFERENCE", "DROP"}
+LEVEL_ONE_COMPONENTS = {
+    "core/precedence.md",
+    "core/agent-contract.md",
+    "templates/minimal/AGENT_RULES.md",
 }
 
 
@@ -290,8 +314,37 @@ def _validate_destination(relative: str, category: Any, prefix: str, errors: Lis
     elif category == "project-instructions":
         if "/" in relative or not relative.endswith(".md"):
             errors.append("{} project-instructions destination must be a root Markdown file".format(prefix))
+    elif category == "global-instructions":
+        if not relative.endswith(".md"):
+            errors.append("{} global-instructions destination must be a Markdown file".format(prefix))
     else:
         errors.append("{} output category is invalid".format(prefix))
+
+
+def _validate_official_sources(
+    sources: Any,
+    kind: Any,
+    prefix: str,
+    errors: List[str],
+) -> None:
+    if not isinstance(sources, list):
+        errors.append("{}: official_sources must be an array".format(prefix))
+        return
+    if kind == "automatic" and not sources:
+        errors.append("{}: automatic discovery requires an official source".format(prefix))
+    for index, source in enumerate(sources):
+        source_prefix = "{}: official_sources[{}]".format(prefix, index)
+        if not isinstance(source, dict):
+            errors.append("{} must be an object".format(source_prefix))
+            continue
+        if not isinstance(source.get("title"), str) or not source.get("title"):
+            errors.append("{} title must be a non-empty string".format(source_prefix))
+        if not isinstance(source.get("url"), str) or not source["url"].startswith("https://"):
+            errors.append("{} URL must use HTTPS".format(source_prefix))
+        if not _validate_date(source.get("accessed")):
+            errors.append("{} accessed must be an ISO date".format(source_prefix))
+        if "documentation_date" in source and not _validate_date(source["documentation_date"]):
+            errors.append("{} documentation_date must be an ISO date".format(source_prefix))
 
 
 def _validate_adapter(root: Path, adapter_id: str, errors: List[str]) -> bytes:
@@ -313,9 +366,17 @@ def _validate_adapter(root: Path, adapter_id: str, errors: List[str]) -> bytes:
     discovery = data.get("discovery")
     template = data.get("template")
     output = data.get("output")
+    global_target = data.get("global")
     recognition = data.get("recognition")
-    if not all(isinstance(value, dict) for value in (discovery, template, output, recognition)):
-        errors.append("{}: discovery, template, output, and recognition must be objects".format(relative))
+    if not all(
+        isinstance(value, dict)
+        for value in (discovery, template, output, global_target, recognition)
+    ):
+        errors.append(
+            "{}: discovery, template, output, global, and recognition must be objects".format(
+                relative
+            )
+        )
         return b""
 
     output_path = output.get("path")
@@ -334,23 +395,48 @@ def _validate_adapter(root: Path, adapter_id: str, errors: List[str]) -> bytes:
         errors.append("{}: discovery kind is invalid".format(relative))
     if discovery.get("scope") != "project":
         errors.append("{}: discovery scope must be project".format(relative))
-    sources = discovery.get("official_sources")
-    if not isinstance(sources, list):
-        errors.append("{}: official_sources must be an array".format(relative))
+    _validate_official_sources(
+        discovery.get("official_sources"), discovery.get("kind"), relative, errors
+    )
+
+    global_discovery = global_target.get("discovery")
+    global_output = global_target.get("output")
+    if not isinstance(global_discovery, dict) or not isinstance(global_output, dict):
+        errors.append("{}: global discovery and output must be objects".format(relative))
     else:
-        if discovery.get("kind") == "automatic" and not sources:
-            errors.append("{}: automatic discovery requires an official source".format(relative))
-        for index, source in enumerate(sources):
-            source_prefix = "{}: official_sources[{}]".format(relative, index)
-            if not isinstance(source, dict):
-                errors.append("{} must be an object".format(source_prefix))
-                continue
-            if not isinstance(source.get("url"), str) or not source["url"].startswith("https://"):
-                errors.append("{} URL must use HTTPS".format(source_prefix))
-            if not _validate_date(source.get("accessed")):
-                errors.append("{} accessed must be an ISO date".format(source_prefix))
-            if "documentation_date" in source and not _validate_date(source["documentation_date"]):
-                errors.append("{} documentation_date must be an ISO date".format(source_prefix))
+        global_path = global_output.get("path")
+        global_discovery_path = global_discovery.get("path")
+        for value, label in (
+            (global_path, "global output path"),
+            (global_discovery_path, "global discovery path"),
+        ):
+            try:
+                safe_relative_path(value, "{}: {}".format(relative, label))
+            except (ConfigError, TypeError) as error:
+                errors.append(str(error))
+        if isinstance(global_path, str):
+            _validate_destination(
+                global_path, global_output.get("category"), relative, errors
+            )
+            expected_global_path = GLOBAL_OUTPUT_PATHS.get(adapter_id)
+            if global_path != expected_global_path:
+                errors.append(
+                    "{}: global output path must be '{}'".format(
+                        relative, expected_global_path
+                    )
+                )
+        if global_path != global_discovery_path:
+            errors.append("{}: global output path must equal discovery path".format(relative))
+        if global_discovery.get("kind") not in {"automatic", "manual"}:
+            errors.append("{}: global discovery kind is invalid".format(relative))
+        if global_discovery.get("scope") != "global":
+            errors.append("{}: global discovery scope must be global".format(relative))
+        _validate_official_sources(
+            global_discovery.get("official_sources"),
+            global_discovery.get("kind"),
+            "{}: global".format(relative),
+            errors,
+        )
 
     if template.get("content_mode") != "canonical-bundle":
         errors.append("{}: template content_mode must be canonical-bundle".format(relative))
@@ -437,6 +523,92 @@ def _validate_authorization_cases(root: Path, errors: List[str]) -> None:
             errors.append("{}: cases[{}] non-mutating request grants mutation".format(relative, index))
 
 
+def _validate_migration_map(root: Path, errors: List[str]) -> None:
+    relative = "docs/migration-map.json"
+    data = _read_json(root, relative, errors)
+    sources = data.get("sources") if data else None
+    if not isinstance(sources, list):
+        errors.append("{}: sources must be an array".format(relative))
+        sources = []
+    seen: Set[str] = set()
+    dispositions: Set[str] = set()
+    for index, source in enumerate(sources):
+        prefix = "{}: sources[{}]".format(relative, index)
+        if not isinstance(source, dict):
+            errors.append("{} must be an object".format(prefix))
+            continue
+        path = source.get("path")
+        if path not in LEGACY_SOURCES:
+            errors.append("{} has unknown legacy path '{}'".format(prefix, path))
+        elif path in seen:
+            errors.append("{} duplicates legacy source '{}'".format(prefix, path))
+        else:
+            seen.add(path)
+        concepts = source.get("concepts")
+        if not isinstance(concepts, list) or not concepts:
+            errors.append("{} concepts must be a non-empty array".format(prefix))
+            continue
+        for concept_index, concept in enumerate(concepts):
+            concept_prefix = "{} concepts[{}]".format(prefix, concept_index)
+            if not isinstance(concept, dict):
+                errors.append("{} must be an object".format(concept_prefix))
+                continue
+            if not isinstance(concept.get("name"), str) or not concept.get("name"):
+                errors.append("{} name must be a non-empty string".format(concept_prefix))
+            disposition = concept.get("disposition")
+            if disposition not in MIGRATION_DISPOSITIONS:
+                errors.append("{} disposition is invalid".format(concept_prefix))
+            else:
+                dispositions.add(disposition)
+            destination = concept.get("destination")
+            if disposition == "DROP":
+                if destination is not None:
+                    errors.append("{} DROP destination must be null".format(concept_prefix))
+            else:
+                try:
+                    safe_relative_path(destination, "{} destination".format(concept_prefix))
+                except (ConfigError, TypeError) as error:
+                    errors.append(str(error))
+            if not isinstance(concept.get("reason"), str) or not concept.get("reason"):
+                errors.append("{} reason must be a non-empty string".format(concept_prefix))
+    for missing in sorted(LEGACY_SOURCES - seen):
+        errors.append("{}: missing legacy source '{}'".format(relative, missing))
+    for missing in sorted(MIGRATION_DISPOSITIONS - dispositions):
+        errors.append("{}: missing disposition '{}'".format(relative, missing))
+
+
+def _validate_level_one(root: Path, errors: List[str]) -> None:
+    relative = "examples/level-1-minimal/example.json"
+    data = _read_json(root, relative, errors)
+    if not data:
+        return
+    if data.get("version") != 1 or data.get("level") != 1:
+        errors.append("{}: version and level must both be 1".format(relative))
+    if data.get("external_skills") is not False:
+        errors.append("{}: Level 1 cannot require external skills".format(relative))
+    if data.get("global_configuration") is not False:
+        errors.append("{}: Level 1 cannot require global configuration".format(relative))
+    adapter_id = data.get("adapter")
+    if adapter_id not in REQUIRED_ADAPTERS:
+        errors.append("{}: adapter is not supported".format(relative))
+    else:
+        adapter = _read_json(root, "adapters/{}/adapter.json".format(adapter_id), errors)
+        if adapter:
+            if adapter.get("discovery", {}).get("kind") != "automatic":
+                errors.append("{}: Level 1 adapter must support automatic project discovery".format(relative))
+            if data.get("output") != adapter.get("output", {}).get("path"):
+                errors.append("{}: output must match the selected adapter".format(relative))
+    components = data.get("components")
+    if not isinstance(components, list) or set(components) != LEVEL_ONE_COMPONENTS:
+        errors.append("{}: components must be the complete minimal canonical bundle".format(relative))
+    else:
+        for component in components:
+            try:
+                resolve_beneath(root, component, must_exist=True, label="{} component".format(relative))
+            except ConfigError as error:
+                errors.append(str(error))
+
+
 def validate(root: Path) -> List[str]:
     """Return deterministic validation errors for a repository root."""
 
@@ -454,4 +626,6 @@ def validate(root: Path) -> List[str]:
     _validate_skill_catalog(resolved_root, errors)
     _validate_adapters(resolved_root, errors)
     _validate_authorization_cases(resolved_root, errors)
+    _validate_migration_map(resolved_root, errors)
+    _validate_level_one(resolved_root, errors)
     return sorted(set(errors))

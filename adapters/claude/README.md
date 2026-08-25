@@ -1,11 +1,12 @@
 # Claude Code Adapter
 
 Claude Code loads `CLAUDE.md` at project scope and can layer instructions along
-the directory hierarchy. This adapter renders the root project entry only; it
-does not write user, local, or managed configuration.
+the directory hierarchy. Its global instructions file is
+`.claude/CLAUDE.md` beneath the user's explicitly supplied home root.
 
 Source reviewed August 25, 2026: [How Claude remembers your
 project](https://code.claude.com/docs/en/memory).
 
-Render into staging and inspect the diff before copying the file into a project.
-The template changes no canonical policy semantics.
+Project scope renders the full minimal project bundle. Global scope renders only
+the universal core. Both write to caller-declared staging; the tool never finds
+or changes a home directory. Inspect the diff before manually copying the file.

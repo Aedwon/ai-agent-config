@@ -194,6 +194,28 @@ class RepositoryValidationTests(unittest.TestCase):
 
         self.assert_error_contains(errors, "recognition cannot fix a model or subscription")
 
+    def test_rejects_forbidden_global_destination(self):
+        root = copy_repository(self)
+        adapter_path = root / "adapters" / "codex" / "adapter.json"
+        adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+        adapter["global"] = {
+            "discovery": {
+                "kind": "automatic",
+                "scope": "global",
+                "path": ".cache/global.md",
+                "official_sources": adapter["discovery"]["official_sources"],
+            },
+            "output": {
+                "path": ".cache/global.md",
+                "category": "global-instructions",
+            },
+        }
+        adapter_path.write_text(json.dumps(adapter), encoding="utf-8")
+
+        errors = self.validate(root)
+
+        self.assert_error_contains(errors, "forbidden destination category")
+
 
 if __name__ == "__main__":
     unittest.main()
