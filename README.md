@@ -50,6 +50,28 @@ python3 -m tooling.config profile \
   --output /explicit/private/path/profile.md
 ```
 
+## Version and self-verification
+
+The scaffold version is recorded in the repository-root `VERSION` file. A clone
+can identify the policy and tooling generation it started from with:
+
+```sh
+cat VERSION
+```
+
+Before sharing changes or updating a clone, run the same self-verification entry
+point used by CI:
+
+```sh
+python3 -m tooling.verify
+```
+
+It checks the version marker and relevant whitespace, runs the unit-test suite,
+and validates the canonical repository. The hosted `Verify` workflow runs the
+same command for pull requests, updates to `main`, and manual dispatches so local
+and hosted checks stay aligned. See [Versioning](docs/versioning.md) for the
+SemVer policy.
+
 ## Setup modes
 
 1. **Minimal:** one project entry with the universal baseline. Best for a first
@@ -224,6 +246,7 @@ explicit integrity checks.
 - [Safe configuration management](docs/configuration-management.md)
 - [Dependencies and discovery evidence](docs/dependencies.md)
 - [Validation and recognition](docs/validation.md)
+- [Versioning](docs/versioning.md)
 - [Migration from v1](docs/migration-v1-to-v2.md)
 
 ## License and third-party material
