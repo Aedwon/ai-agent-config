@@ -44,7 +44,7 @@ class RecognitionRunnerTests(unittest.TestCase):
         probe = self.load_api()
         executable = self.make_executable()
 
-        for adapter_id in ("codex", "claude", "gemini", "antigravity"):
+        for adapter_id in ("codex", "claude", "gemini"):
             with self.subTest(adapter=adapter_id):
                 result = probe(REPOSITORY_ROOT, adapter_id, executable=executable)
 
@@ -55,10 +55,16 @@ class RecognitionRunnerTests(unittest.TestCase):
     def test_manual_adapter_is_unproven(self):
         probe = self.load_api()
 
-        result = probe(REPOSITORY_ROOT, "generic", executable=self.make_executable())
+        for adapter_id in ("generic", "antigravity"):
+            with self.subTest(adapter=adapter_id):
+                result = probe(
+                    REPOSITORY_ROOT,
+                    adapter_id,
+                    executable=self.make_executable(),
+                )
 
-        self.assertEqual(result.status, "UNPROVEN")
-        self.assertIn("manual", result.reason)
+                self.assertEqual(result.status, "UNPROVEN")
+                self.assertIn("manual", result.reason)
 
     def test_missing_executable_is_unproven(self):
         probe = self.load_api()
@@ -78,6 +84,17 @@ class RecognitionRunnerTests(unittest.TestCase):
 
         self.assertEqual(result.status, "UNPROVEN")
         self.assertIn("authentication", result.reason)
+
+    def test_expired_oauth_authenticate_failure_is_unproven(self):
+        probe = self.load_api()
+        executable = self.make_executable(
+            'import sys\nprint("Failed to authenticate: OAuth session expired", file=sys.stderr)\nraise SystemExit(1)\n'
+        )
+
+        result = probe(REPOSITORY_ROOT, "claude", executable=executable)
+
+        self.assertEqual(result.status, "UNPROVEN")
+        self.assertIn("authenticate", result.reason)
 
     def test_ambiguous_output_is_unproven(self):
         probe = self.load_api()

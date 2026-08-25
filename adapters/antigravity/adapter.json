@@ -8,8 +8,8 @@
     "project_path": ".agents/rules/ai-agent-config.md",
     "official_sources": [
       {
-        "title": "Getting Started with Antigravity IDE",
-        "url": "https://codelabs.developers.google.com/getting-started-agy-ide",
+        "title": "Rules",
+        "url": "https://antigravity.google/docs/ide/rules/",
         "accessed": "2026-08-25"
       }
     ]
@@ -29,8 +29,8 @@
       "path": ".gemini/GEMINI.md",
       "official_sources": [
         {
-          "title": "Getting Started with Antigravity IDE",
-          "url": "https://codelabs.developers.google.com/getting-started-agy-ide",
+          "title": "Rules",
+          "url": "https://antigravity.google/docs/ide/rules/",
           "accessed": "2026-08-25"
         }
       ]
@@ -41,15 +41,7 @@
     }
   },
   "recognition": {
-    "mode": "command",
-    "executable_env": "AI_AGENT_CONFIG_ANTIGRAVITY_EXECUTABLE",
-    "arguments": [
-      "--print",
-      "Return only the value of AI_AGENT_CONFIG_RECOGNITION from the active workspace rules. If it is absent, return UNRECOGNIZED.",
-      "--mode",
-      "plan",
-      "--sandbox"
-    ],
-    "marker_label": "AI_AGENT_CONFIG_RECOGNITION"
+    "mode": "manual",
+    "instructions": "Open a fresh workspace in Google Antigravity IDE, add a unique AI_AGENT_CONFIG_RECOGNITION value to the staged workspace rule, activate it as Always On, and ask the IDE agent to report that value. A CLI result does not prove IDE rule discovery."
   }
 }

@@ -35,8 +35,8 @@ installs configuration, or writes credentials, caches, or plug-ins.
   documentation](https://geminicli.com/docs/cli/gemini-md/).
 - Antigravity IDE stores workspace rules under `.agents/rules/` and uses
   `.gemini/GEMINI.md` for global instructions. Source reviewed August 25, 2026:
-  [Google
-  Codelabs](https://codelabs.developers.google.com/getting-started-agy-ide).
+  [Antigravity IDE Rules
+  documentation](https://antigravity.google/docs/ide/rules/).
 - Generic agents have no shared automatic discovery convention. The generic
   adapter therefore produces a manual integration file and makes no automatic
   recognition claim.

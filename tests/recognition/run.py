@@ -18,6 +18,7 @@ from tooling.config.render import render
 
 INFRASTRUCTURE_PATTERNS = (
     "authentication",
+    "authenticate",
     "not logged in",
     "login required",
     "unauthorized",

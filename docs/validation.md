@@ -35,5 +35,6 @@ or load optional skills.
 
 Results are `PASS`, `FAIL`, or `UNPROVEN`. Missing executables, authentication
 failures, timeouts, and ambiguous output are `UNPROVEN`, not evidence of
-recognition and not a static adapter failure. The generic adapter is manual and
-therefore remains `UNPROVEN` until a user follows its integration instructions.
+recognition and not a static adapter failure. Generic and Antigravity IDE
+adapters are manual and therefore remain `UNPROVEN` until a user follows their
+integration instructions. Antigravity CLI is not used to prove IDE discovery.
