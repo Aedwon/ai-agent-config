@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "id": "codex",
+  "label": "Codex project instructions",
+  "discovery": {
+    "kind": "automatic",
+    "scope": "project",
+    "project_path": "AGENTS.md",
+    "official_sources": [
+      {
+        "title": "Custom instructions with AGENTS.md",
+        "url": "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+        "accessed": "2026-08-25"
+      }
+    ]
+  },
+  "template": {
+    "path": "adapters/codex/entry.md.tmpl",
+    "content_mode": "canonical-bundle"
+  },
+  "output": {
+    "path": "AGENTS.md",
+    "category": "project-instructions"
+  },
+  "global": {
+    "discovery": {
+      "kind": "automatic",
+      "scope": "global",
+      "path": ".codex/AGENTS.md",
+      "official_sources": [
+        {
+          "title": "Custom instructions with AGENTS.md",
+          "url": "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+          "accessed": "2026-08-25"
+        }
+      ]
+    },
+    "output": {
+      "path": ".codex/AGENTS.md",
+      "category": "global-instructions"
+    }
+  },
+  "recognition": {
+    "mode": "command",
+    "executable_env": "AI_AGENT_CONFIG_CODEX_EXECUTABLE",
+    "arguments": [
+      "exec",
+      "--sandbox",
+      "read-only",
+      "--ephemeral",
+      "--ignore-user-config",
+      "--skip-git-repo-check",
+      "Return only the value of AI_AGENT_CONFIG_RECOGNITION from the active project instructions. If it is absent, return UNRECOGNIZED."
+    ],
+    "marker_label": "AI_AGENT_CONFIG_RECOGNITION"
+  }
+}

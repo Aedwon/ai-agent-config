@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Aedwon/ai-agent-config/adapters/catalog.schema.json",
+  "title": "ai-agent-config adapter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "label",
+    "discovery",
+    "template",
+    "output",
+    "global",
+    "recognition"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+    "label": {"type": "string", "minLength": 1},
+    "discovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "scope", "project_path", "official_sources"],
+      "properties": {
+        "kind": {"enum": ["automatic", "manual"]},
+        "scope": {"const": "project"},
+        "project_path": {"$ref": "#/$defs/relativePath"},
+        "official_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "url", "accessed"],
+            "properties": {
+              "title": {"type": "string", "minLength": 1},
+              "url": {"type": "string", "format": "uri"},
+              "accessed": {"type": "string", "format": "date"},
+              "documentation_date": {"type": "string", "format": "date"}
+            }
+          }
+        }
+      }
+    },
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "content_mode"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "content_mode": {"const": "canonical-bundle"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "category"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "category": {"enum": ["project-instructions", "workspace-rule"]}
+      }
+    },
+    "global": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["discovery", "output"],
+      "properties": {
+        "discovery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "scope", "path", "official_sources"],
+          "properties": {
+            "kind": {"enum": ["automatic", "manual"]},
+            "scope": {"const": "global"},
+            "path": {"$ref": "#/$defs/relativePath"},
+            "official_sources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["title", "url", "accessed"],
+                "properties": {
+                  "title": {"type": "string", "minLength": 1},
+                  "url": {"type": "string", "format": "uri"},
+                  "accessed": {"type": "string", "format": "date"},
+                  "documentation_date": {"type": "string", "format": "date"}
+                }
+              }
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "category"],
+          "properties": {
+            "path": {"$ref": "#/$defs/relativePath"},
+            "category": {"const": "global-instructions"}
+          }
+        }
+      }
+    },
+    "recognition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "executable_env", "arguments", "marker_label"],
+          "properties": {
+            "mode": {"const": "command"},
+            "executable_env": {"type": "string", "pattern": "^AI_AGENT_CONFIG_[A-Z0-9_]+_EXECUTABLE$"},
+            "arguments": {"type": "array", "items": {"type": "string"}},
+            "marker_label": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "instructions"],
+          "properties": {
+            "mode": {"const": "manual"},
+            "instructions": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    }
+  }
+}

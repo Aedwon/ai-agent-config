@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "antigravity",
+  "label": "Google Antigravity workspace rule",
+  "discovery": {
+    "kind": "automatic",
+    "scope": "project",
+    "project_path": ".agents/rules/ai-agent-config.md",
+    "official_sources": [
+      {
+        "title": "Rules",
+        "url": "https://antigravity.google/docs/ide/rules/",
+        "accessed": "2026-08-25"
+      }
+    ]
+  },
+  "template": {
+    "path": "adapters/antigravity/entry.md.tmpl",
+    "content_mode": "canonical-bundle"
+  },
+  "output": {
+    "path": ".agents/rules/ai-agent-config.md",
+    "category": "workspace-rule"
+  },
+  "global": {
+    "discovery": {
+      "kind": "automatic",
+      "scope": "global",
+      "path": ".gemini/GEMINI.md",
+      "official_sources": [
+        {
+          "title": "Rules",
+          "url": "https://antigravity.google/docs/ide/rules/",
+          "accessed": "2026-08-25"
+        }
+      ]
+    },
+    "output": {
+      "path": ".gemini/GEMINI.md",
+      "category": "global-instructions"
+    }
+  },
+  "recognition": {
+    "mode": "manual",
+    "instructions": "Open a fresh workspace in Google Antigravity IDE, add a unique AI_AGENT_CONFIG_RECOGNITION value to the staged workspace rule, activate it as Always On, and ask the IDE agent to report that value. A CLI result does not prove IDE rule discovery."
+  }
+}

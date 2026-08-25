@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "level": 1,
+  "scope": "project",
+  "adapter": "codex",
+  "output": "AGENTS.md",
+  "components": [
+    "core/precedence.md",
+    "core/agent-contract.md",
+    "templates/minimal/AGENT_RULES.md"
+  ],
+  "project_types": [],
+  "workflows": [],
+  "external_skills": false,
+  "global_configuration": false
+}

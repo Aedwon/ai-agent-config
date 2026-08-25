@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "level": 4,
+  "scope": "global",
+  "adapter": "codex",
+  "output": ".codex/AGENTS.md",
+  "project_types": [],
+  "workflows": [],
+  "external_skills": "optional",
+  "global_configuration": true
+}

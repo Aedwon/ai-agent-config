@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "level": 2,
+  "scope": "project",
+  "adapter": "codex",
+  "output": "AGENTS.md",
+  "project_types": [
+    "software-project",
+    "product-app"
+  ],
+  "workflows": [
+    "planning",
+    "implementation",
+    "verification"
+  ],
+  "external_skills": "optional",
+  "global_configuration": false
+}

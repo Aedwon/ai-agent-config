@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "level": 3,
+  "scope": "project",
+  "adapter": "codex",
+  "output": "AGENTS.md",
+  "project_types": [
+    "software-project"
+  ],
+  "workflows": [
+    "planning",
+    "implementation",
+    "delegation",
+    "code-review",
+    "verification",
+    "handoff"
+  ],
+  "optional_skills": [
+    "testing-at-seams"
+  ],
+  "isolation": "worktree-when-warranted",
+  "external_skills": "optional",
+  "global_configuration": false
+}
