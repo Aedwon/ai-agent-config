@@ -87,9 +87,14 @@ def _prompt_choice(label: str, choices: Tuple[str, ...], default: str) -> str:
 
 
 def _prompt_level() -> int:
-    raw = input("Adoption level [1-4, default 1]: ").strip()
+    print("Adoption level:")
+    print("  1. Minimal — first trial, tiny repository, or low-coordination work")
+    print("  2. Normal project — recommended for most repositories [default]")
+    print("  3. Agent-heavy — several agents, long-running work, or costly changes")
+    print("  4. Provider-native/global — explicit global configuration")
+    raw = input("> ").strip()
     if not raw:
-        return 1
+        return 2
     if raw in {"1", "2", "3", "4"}:
         return int(raw)
     raise ConfigError("adoption level must be 1, 2, 3, or 4")

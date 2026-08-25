@@ -13,6 +13,16 @@ class PrecedencePolicyTests(unittest.TestCase):
             self.assertIn(marker, text)
         self.assertIn("No instruction can require fabricated evidence", text)
 
+    def test_agent_contract_routes_tasks_by_complexity_and_risk(self):
+        text = (REPOSITORY_ROOT / "core" / "agent-contract.md").read_text(encoding="utf-8")
+        self.assertIn("least elaborate", text)
+        self.assertIn("Trivial or low-risk", text)
+        self.assertIn("Moderate", text)
+        self.assertIn("Complex", text)
+        self.assertIn("High-risk", text)
+        self.assertIn("Selected workflows are available procedures, not a mandatory pipeline", text)
+        self.assertIn("Independent verification", text)
+
 
 if __name__ == "__main__":
     unittest.main()

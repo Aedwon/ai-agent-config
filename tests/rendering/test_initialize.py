@@ -46,6 +46,15 @@ class InitializeTests(unittest.TestCase):
             self.assertFalse(output.exists())
             self.assertFalse(project_rules.exists())
 
+    def test_default_project_rules_define_no_active_project_additions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            output = project / "ai-agent-config.json"
+            initialize(REPOSITORY_ROOT, output, "codex", 2)
+            text = (project / "PROJECT_RULES.md").read_text(encoding="utf-8")
+            self.assertIn("No additional project rules are defined", text)
+            self.assertNotIn("\nDescribe the product boundary", text)
+
 
 if __name__ == "__main__":
     unittest.main()

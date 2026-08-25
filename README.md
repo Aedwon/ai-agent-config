@@ -10,13 +10,14 @@ Python's standard library and requires no paid subscription, specific model,
 global configuration manager, or external skill library. The referenced Matt
 Pocock and Superpowers packages are optional accelerators.
 
-## Quick start: Antigravity IDE
+## Quick start
 
-If someone sent you this repository and you use Google Antigravity IDE, this is
-the shortest path. Start with **Level 1** for the universal baseline or **Level
-2** for a normal software project.
+For most software projects, start with **Level 2**. Use Level 1 for a minimal
+trial, Level 3 for unusually agent-heavy work, and Level 4 only for explicit
+global/provider-native configuration.
 
-Clone the repository, then initialize a manifest for your project:
+Clone the repository and initialize a manifest for the project you want an agent
+to work on:
 
 ```sh
 git clone https://github.com/Aedwon/ai-agent-config.git
@@ -30,13 +31,10 @@ python3 -m tooling.config init \
   --output "$project_root/ai-agent-config.json"
 ```
 
-When prompted:
-
-- choose `antigravity` as the provider adapter;
-- choose Level 1 or Level 2 unless you specifically need the heavier workflows;
-- at Level 2, choose the project type that best matches the repository;
-- create a personal profile only if you want private preferences such as tone,
-  verbosity, or cost routing.
+The initializer asks which provider you use, which adoption level fits the
+project, and—at Levels 2 and 3—which project type is closest. It creates only
+project-owned configuration files; it does not install provider configuration
+or modify a home directory.
 
 Render the selected configuration to a temporary staging directory:
 
@@ -49,83 +47,43 @@ python3 -m tooling.config render \
   --output-root "$staging_root"
 ```
 
-Review the generated file at:
-
-```text
-$staging_root/.agents/rules/ai-agent-config.md
-```
-
-If it looks correct, install it into the project:
+The command prints the exact staged provider file. Review it, optionally compare
+it with the receiving project, then copy that one generated file to the same
+relative location under the project root:
 
 ```sh
-mkdir -p "$project_root/.agents/rules"
-cp "$staging_root/.agents/rules/ai-agent-config.md" \
-  "$project_root/.agents/rules/ai-agent-config.md"
-```
-
-Open the project in Antigravity. If the workspace rule is not active
-automatically, enable it through the IDE. Antigravity's documented workspace
-rule location is `.agents/rules/`; the first recognition check is intentionally
-manual because the separate `agy` CLI cannot prove IDE rule discovery.
-
-That is enough to start using the system. External skill packages and global
-configuration are optional.
-
-## Fastest setup
-
-Cloning the repository changes nothing on your machine. To personalize a
-project, run the explicit initializer and answer a few small questions:
-
-```sh
-repo_root=/absolute/path/to/ai-agent-config
-project_root=/absolute/path/to/your-project
-
-python3 -m tooling.config init \
-  --root "$repo_root" \
-  --output "$project_root/ai-agent-config.json"
-```
-
-The initializer asks for the provider adapter and adoption level. At Levels 2
-and 3 it also asks for a project type, creates a project-owned
-`PROJECT_RULES.md` when one does not already exist, and optionally creates a
-personal profile template at a path you choose. It never installs provider
-configuration or discovers a home directory.
-
-Then render to staging:
-
-```sh
-staging_root=$(mktemp -d)
-
-python3 -m tooling.config validate --root "$repo_root"
-python3 -m tooling.config render \
-  --root "$repo_root" \
-  --manifest "$project_root/ai-agent-config.json" \
-  --output-root "$staging_root"
 python3 -m tooling.config diff \
   --root "$repo_root" \
   --manifest "$project_root/ai-agent-config.json" \
   --target-root "$project_root"
 ```
 
-Review the staged provider entry, then copy it into the project yourself.
-`diff` is read-only and exits with status 1 when it finds a difference.
+`diff` is read-only and exits with status 1 when it finds a difference. That is
+enough to start. External skills, personal profiles, recognition probes, and
+global configuration are optional.
 
-For a fully manual Level 1 trial, you can still pass `--adapter codex` without
-a manifest. See the [adoption guide](docs/adoption.md).
+For a fully manual Level 1 trial, you can skip the manifest and render directly
+with `--adapter codex` (or another supported adapter). See the
+[adoption guide](docs/adoption.md) for the longer form.
 
 ## Four adoption levels
 
-1. **Minimal:** one project entry with the universal baseline. No external
-   skills, global mutation, or planning ceremony.
-2. **Normal project:** compose project rules, a project-type overlay, and the
-   neutral workflows that fit the work.
-3. **Agent-heavy:** add plans, decisions, delegation, isolated worktrees,
-   deeper review, and optional skills where the added control is worthwhile.
+1. **Minimal:** one project entry with the universal baseline. Best for a first
+   trial, tiny repository, or low-coordination work.
+2. **Normal project:** compose project rules, a project-type overlay, and useful
+   neutral workflows. This is the recommended default for most repositories.
+3. **Agent-heavy:** add delegation, deeper review, handoff, and other controls
+   when several agents, long-running work, or costly changes justify them.
 4. **Provider-native/global:** render the universal core to an explicit staging
    root, inspect the exact diff, install manually, and run an opt-in recognition
-   probe.
+   probe when useful.
 
-Adopt only the level that pays for itself. Levels 1 and 2 are fully standalone.
+Adoption level controls which capabilities are available to the agent. It does
+**not** prescribe the same amount of ceremony for every task. The universal core
+requires the least elaborate per-task process that still provides sufficient
+safety, correctness, and verification: trivial work can execute directly,
+moderate work gets lightweight planning, complex work gets explicit planning and
+review, and high-risk work gets explicit authority and independent verification.
 
 ## How composition works
 
@@ -145,12 +103,13 @@ not waivable by a lower layer or by ordinary workflow preferences.
 
 A manifest makes Levels 2 and 3 real composition instead of documentation-only
 lists. Provider adapters change only discovery mechanics; they do not change
-the selected policy body.
+the selected policy body. Selected workflows are available procedures, not a
+mandatory pipeline for every task.
 
 ## Repository layers
 
 - `core/` defines universal invariants, authorization, precedence, evidence,
-  delegation, and completion rules.
+  delegation, completion rules, and per-task process proportionality.
 - `templates/` holds minimal and project-owned starter files.
 - `project-types/` adds reusable domain deltas. Start with the software
   baseline, then add a relevant overlay.
@@ -181,6 +140,11 @@ the place for controls that must be technically enforced.
 The renderer always requires an explicit source root and staging root. It does
 not discover a home directory, install configuration, copy credentials, or
 manage provider caches and plug-ins.
+
+For Antigravity IDE, install the staged project output at
+`.agents/rules/ai-agent-config.md`. If the workspace rule is not active
+automatically, enable it through the IDE. The separate `agy` CLI cannot prove
+IDE rule discovery, so the first recognition check is intentionally manual.
 
 ## Personal profiles
 

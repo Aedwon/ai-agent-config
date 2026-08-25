@@ -1,7 +1,13 @@
 # Adoption
 
-Choose the smallest level that addresses the project's actual coordination
-risk. Every level uses the same canonical core and deterministic renderer.
+Choose the smallest adoption level that addresses the project's actual
+coordination risk. For most software repositories, start with **Level 2**. Every
+level uses the same canonical core and deterministic renderer.
+
+Adoption level and per-task process are separate decisions. The adoption level
+controls which reusable rules and workflows are available in a project. For
+each individual task, the universal core still requires the least elaborate
+process that provides sufficient safety, correctness, and verification.
 
 Cloning this repository is inert. It does not change a project, home directory,
 or provider configuration.
@@ -22,7 +28,8 @@ when that file does not already exist, and offers to create a personal profile
 template at an explicit path you choose.
 
 The initializer never installs provider configuration. Edit the generated
-project rules and optional profile before rendering.
+project rules and optional profile before rendering when the project needs
+custom rules; the generated defaults are usable without additional setup.
 
 For automation, use:
 
@@ -54,7 +61,8 @@ python3 -m tooling.config render \
   --output-root "$staging_root"
 ```
 
-Compare against the receiving project without changing it:
+The render command prints the exact staged provider file. Compare against the
+receiving project without changing it:
 
 ```sh
 python3 -m tooling.config diff \
@@ -63,31 +71,53 @@ python3 -m tooling.config diff \
   --target-root /absolute/path/to/project
 ```
 
-Review the staged result, then copy it manually.
+Review the staged result, then copy that generated file to the same relative
+location under the project root.
+
+## Per-task process tiers
+
+The selected workflows are available procedures, not a mandatory pipeline. For
+each task, choose the highest process tier justified by either complexity or
+risk:
+
+- **Trivial or low-risk:** direct execution with the smallest sufficient
+  verification.
+- **Moderate:** lightweight planning, execution, and focused verification.
+- **Complex:** explicit planning, staged implementation, review, and
+  verification.
+- **High-risk:** explicit authority confirmation, constrained execution, and
+  independent verification.
+
+A task can move tiers when new evidence changes its consequence, uncertainty,
+reversibility, scope, or risk. Do not add planning, delegation, review, or other
+ceremony unless it materially improves safety, correctness, or verifiability.
+Independent verification does not require another agent; it can be a test,
+external observable, separate inspection path, or reviewer.
 
 ## Level 1: minimal
 
-Use this for a small project or a first trial. The manifest selects one
+Use this for a tiny project or a first trial. The manifest selects one
 provider-discovered project entry containing precedence, the universal contract,
 and minimal project rules.
 
 No external skills, global manager, specification process, project overlay, or
 provider-global change is involved.
 
-You can skip `init` for a manual trial and render directly with
-`--adapter codex`.
+You can skip `init` for a manual trial and render directly with an explicit
+`--adapter`.
 
 ## Level 2: normal project
 
-Level 2 composes actual selected material into the generated entry:
+Level 2 is the recommended default for most repositories. It composes:
 
 1. Level 1 universal baseline;
 2. `PROJECT_RULES.md` from the project;
 3. `software-project` plus a selected project-type delta when applicable;
 4. selected neutral workflows.
 
-The default initializer selects planning, implementation, and verification
-workflows. Edit the JSON manifest if the project needs a different set.
+The default initializer includes planning, implementation, and verification as
+available workflows. Their presence does not require a plan for every task; the
+per-task process tiers above decide how much ceremony is justified.
 
 Use `DECISIONS.md` and `HANDOFF.md` as project-owned artifacts when useful.
 External skill packages remain optional.
@@ -97,6 +127,10 @@ External skill packages remain optional.
 Use this when several agents, long-running work, or costly changes justify more
 control. The default manifest adds planning, implementation, delegation,
 code-review, verification, and handoff workflows plus the software baseline.
+
+These workflows remain conditional tools, not an always-on sequence. A trivial
+change in a Level 3 repository can still execute directly when the universal
+core classifies it as low-risk.
 
 Add approved specs, decision records, isolated worktrees, and optional skills
 only when they pay for their coordination cost. The main agent still owns
