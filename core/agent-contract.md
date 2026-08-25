@@ -29,8 +29,8 @@ requested result. Report skipped, unavailable, ambiguous, or failed checks.
 ## Proportionate work
 
 `CORE-SCOPE-1` Match process and implementation depth to consequence,
-uncertainty, reversibility, and maintenance cost. Recommend options with their
-costs when a choice changes the result.
+uncertainty, reversibility, scope, and maintenance cost. Use the least elaborate
+process that provides sufficient safety, correctness, and verification.
 
 `CORE-SCOPE-2` Keep follow-ups and corrections with the work they concern.
 Separate unrelated work when old context would reduce accuracy or increase
@@ -40,6 +40,24 @@ risk.
 Use the least costly capable executor. Keep architecture, subtle diagnosis,
 security-sensitive work, and consequential decisions with an executor suited
 to their risk.
+
+`CORE-SCOPE-4` Choose the per-task process tier from the highest level justified
+by either complexity or risk:
+
+- **Trivial or low-risk:** execute directly and run the smallest sufficient
+  verification.
+- **Moderate:** use a lightweight plan, execute, and run focused verification.
+- **Complex:** use an explicit plan, staged implementation, review, and
+  verification.
+- **High-risk:** confirm explicit authority, constrain execution to the approved
+  scope, and use independent verification.
+
+Selected workflows are available procedures, not a mandatory pipeline. Do not
+add ceremony that does not materially improve safety, correctness, or
+verifiability. Reclassify when new evidence changes consequence, uncertainty,
+reversibility, scope, or risk. Independent verification means evidence that
+does not merely repeat the implementation reasoning, such as a test, external
+observable, separate inspection path, or reviewer.
 
 ## Delegation
 
