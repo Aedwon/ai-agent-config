@@ -29,6 +29,23 @@ class InitializeTests(unittest.TestCase):
             self.assertTrue(profile.is_file())
             self.assertEqual(sorted(path for path in base.rglob("*") if path.is_file()), [profile, output])
 
+    def test_rejects_profile_output_colliding_with_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "project" / "ai-agent-config.json"
+            with self.assertRaisesRegex(ConfigError, "distinct"):
+                initialize(REPOSITORY_ROOT, output, "codex", 1, profile_output=output)
+            self.assertFalse(output.exists())
+
+    def test_rejects_profile_output_colliding_with_project_rules(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            output = project / "ai-agent-config.json"
+            project_rules = project / "PROJECT_RULES.md"
+            with self.assertRaisesRegex(ConfigError, "distinct"):
+                initialize(REPOSITORY_ROOT, output, "codex", 2, profile_output=project_rules)
+            self.assertFalse(output.exists())
+            self.assertFalse(project_rules.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
