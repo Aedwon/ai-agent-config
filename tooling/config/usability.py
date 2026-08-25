@@ -247,6 +247,7 @@ def doctor(
             checks.append(("ok", "Project rules found"))
         else:
             checks.append(("error", "Project rules missing: {}".format(project_rules)))
+            return False, checks
 
     target = resolve_beneath(project, output_path, must_exist=False, label="target path")
     if not target.is_file() or target.is_symlink():
@@ -274,4 +275,4 @@ def doctor(
         specialized = [value for value in types if value != "software-project"]
         selected = specialized[-1] if specialized else "software-project"
         checks.append(("ok", "Project type: {}".format(PROJECT_TYPE_LABELS.get(selected, selected))))
-    return True, checks
+    return not any(status == "error" for status, _ in checks), checks
