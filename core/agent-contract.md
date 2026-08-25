@@ -9,6 +9,10 @@ kind: agent-contract
 This contract defines safe defaults for an agent working with a person. Local
 rules may specialize these defaults. They cannot weaken a higher instruction.
 
+The evidence, mutation-authority, and core state-protection rules below are
+non-waivable invariants under `core/precedence.md`. `CORE-DELEGATION-3` is also
+an invariant because delegated work cannot replace main-agent verification.
+
 ## Evidence before assertion
 
 `CORE-EVIDENCE-1` Inspect relevant source and current state before describing

@@ -3,84 +3,151 @@
 Choose the smallest level that addresses the project's actual coordination
 risk. Every level uses the same canonical core and deterministic renderer.
 
-## Before you begin
+Cloning this repository is inert. It does not change a project, home directory,
+or provider configuration.
 
-Use Python 3.9 or newer. Clone this repository, select an adapter, and keep the
-source repository separate from the project receiving generated files. All
-rendering goes to an explicit staging directory outside the source repository.
+## Guided setup
 
-Validate the source first:
+For a new project, create an adoption manifest explicitly:
+
+```sh
+python3 -m tooling.config init \
+  --root /absolute/path/to/ai-agent-config \
+  --output /absolute/path/to/project/ai-agent-config.json
+```
+
+Interactive init asks for the provider adapter and adoption level. At Levels 2
+and 3 it asks for a project type, creates `PROJECT_RULES.md` beside the manifest
+when that file does not already exist, and offers to create a personal profile
+template at an explicit path you choose.
+
+The initializer never installs provider configuration. Edit the generated
+project rules and optional profile before rendering.
+
+For automation, use:
+
+```sh
+python3 -m tooling.config init \
+  --root /absolute/path/to/ai-agent-config \
+  --output /absolute/path/to/project/ai-agent-config.json \
+  --adapter codex \
+  --level 2 \
+  --project-type product-app \
+  --non-interactive
+```
+
+## Before rendering
+
+Validate the canonical source:
 
 ```sh
 python3 -m tooling.config validate --root /absolute/path/to/ai-agent-config
 ```
 
-## Level 1: minimal
-
-Use this for a small project or a first trial. Render one discovered project
-entry containing precedence, the universal contract, and minimal project rules.
+Render into an explicit staging directory:
 
 ```sh
 staging_root=$(mktemp -d)
 python3 -m tooling.config render \
   --root /absolute/path/to/ai-agent-config \
-  --adapter codex \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
   --output-root "$staging_root"
+```
+
+Compare against the receiving project without changing it:
+
+```sh
 python3 -m tooling.config diff \
   --root /absolute/path/to/ai-agent-config \
-  --adapter codex \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
   --target-root /absolute/path/to/project
 ```
 
-Review the result, then copy it manually. No external skills, global manager,
-specification process, or provider-global change is involved.
+Review the staged result, then copy it manually.
+
+## Level 1: minimal
+
+Use this for a small project or a first trial. The manifest selects one
+provider-discovered project entry containing precedence, the universal contract,
+and minimal project rules.
+
+No external skills, global manager, specification process, project overlay, or
+provider-global change is involved.
+
+You can skip `init` for a manual trial and render directly with
+`--adapter codex`.
 
 ## Level 2: normal project
 
-Start with Level 1, then copy `templates/project/PROJECT_RULES.md` into the
-project and fill in only verified commands, boundaries, and conventions. Select
-`project-types/software-project.md` plus one meaningful delta overlay when
-applicable. Link or copy the neutral workflows the project intends to follow.
+Level 2 composes actual selected material into the generated entry:
 
-Use `DECISIONS.md` for durable choices and `HANDOFF.md` only when continuation
-state is useful. External skill packages remain optional.
+1. Level 1 universal baseline;
+2. `PROJECT_RULES.md` from the project;
+3. `software-project` plus a selected project-type delta when applicable;
+4. selected neutral workflows.
+
+The default initializer selects planning, implementation, and verification
+workflows. Edit the JSON manifest if the project needs a different set.
+
+Use `DECISIONS.md` and `HANDOFF.md` as project-owned artifacts when useful.
+External skill packages remain optional.
 
 ## Level 3: agent-heavy
 
 Use this when several agents, long-running work, or costly changes justify more
-control. Add approved specs and plans, decision records, bounded delegation,
-isolated worktrees, verification evidence, and deeper review. Select optional
-skills individually only when their trigger owner and provenance are clear.
+control. The default manifest adds planning, implementation, delegation,
+code-review, verification, and handoff workflows plus the software baseline.
 
-The main agent still owns delegated results. A plan, test pass, handoff, or
-skill invocation does not grant mutation authority.
+Add approved specs, decision records, isolated worktrees, and optional skills
+only when they pay for their coordination cost. The main agent still owns
+delegated results.
+
+A plan, test pass, handoff, or skill invocation does not grant mutation
+authority.
 
 ## Level 4: provider-native or global
 
-Global output contains only the universal core. Render it into staging by
-passing `--scope global`:
+Level 4 uses global scope. The manifest cannot select project rules, project
+types, or project workflows.
+
+Render into staging:
 
 ```sh
 staging_root=$(mktemp -d)
 python3 -m tooling.config render \
   --root /absolute/path/to/ai-agent-config \
-  --adapter codex \
-  --scope global \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
   --output-root "$staging_root"
-python3 -m tooling.config diff \
-  --root /absolute/path/to/ai-agent-config \
-  --adapter codex \
-  --scope global \
-  --target-root /absolute/path/to/home
 ```
 
-The target root is always supplied by the user. Inspect the exact diff, then
-install through a manual or provider-native mechanism. The tool does not write
-the target. Run the recognition probe only after reviewing its command and only
-for an already available, authenticated provider.
+The target root is always supplied by the user during `diff`. Inspect the exact
+result, then install through a manual or provider-native mechanism. The tool
+does not write the target.
+
+A private profile may be appended explicitly with `--profile`; it is never
+discovered automatically.
+
+Run recognition only after reviewing its command and only for an already
+available, authenticated provider.
 
 Gemini CLI and Antigravity currently share `.gemini/GEMINI.md` at global scope.
-If both are used, maintain one reviewed generated file rather than competing
+If both are used, maintain one reviewed generated file instead of competing
 copies.
+
+## Personal profiles
+
+Profiles are optional and private. They may change tone, formatting, preferred
+ceremony, or cost routing. They cannot weaken non-waivable invariants, override
+project decisions, or grant mutation authority.
+
+Pass a profile explicitly:
+
+```sh
+python3 -m tooling.config render \
+  --root /absolute/path/to/ai-agent-config \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
+  --profile /explicit/path/to/profile.md \
+  --output-root "$staging_root"
+```
 
 See the four executable manifests under `examples/`.

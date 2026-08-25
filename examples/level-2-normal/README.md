@@ -1,10 +1,14 @@
 # Level 2: Normal Project
 
-This example keeps Level 1 and adds project-owned rules, the shared software
-baseline, a product-app delta, and selected neutral workflows. Copy and edit the
-project templates in the receiving repository. External skills remain optional.
+This example composes the Level 1 baseline with the software baseline, a
+product-app overlay, and planning, implementation, and verification workflows.
 
 ```sh
-staging_root=$(mktemp -d)
-python3 -m tooling.config render --root . --adapter codex --output-root "$staging_root"
+python3 -m tooling.config render \
+  --root . \
+  --manifest examples/level-2-normal/example.json \
+  --output-root /tmp/ai-agent-config-level-2
 ```
+
+A real project created through `init` also references its project-owned
+`PROJECT_RULES.md`. External skills remain optional.

@@ -9,6 +9,8 @@
     "core/agent-contract.md",
     "templates/minimal/AGENT_RULES.md"
   ],
+  "project_types": [],
+  "workflows": [],
   "external_skills": false,
   "global_configuration": false
 }

@@ -1,10 +1,14 @@
-# Level 3: Agent-Heavy
+# Level 3: Agent-Heavy Project
 
-This example adds delegation, review, verification, handoff, decisions, and an
-optional skill selection to the normal project layer. Use these controls when
-parallel or long-running work makes their cost worthwhile.
+This example composes the software baseline with planning, implementation,
+delegation, code-review, verification, and handoff workflows.
 
 ```sh
-staging_root=$(mktemp -d)
-python3 -m tooling.config render --root . --adapter codex --output-root "$staging_root"
+python3 -m tooling.config render \
+  --root . \
+  --manifest examples/level-3-agent-heavy/example.json \
+  --output-root /tmp/ai-agent-config-level-3
 ```
+
+Optional skills and worktree isolation are coordination aids, not prerequisites
+for the renderer.

@@ -1,15 +1,14 @@
 # Level 4: Provider-Native or Global
 
-This example renders only the universal core to Codex's documented global path
-beneath an explicit staging root. Diff against an explicit home root, inspect
-the result, install manually, then run the opt-in recognition probe.
+This manifest renders global-scope instructions into staging. It selects no
+project rules, project types, or project workflows.
 
 ```sh
-staging_root=$(mktemp -d)
 python3 -m tooling.config render \
-  --root . --adapter codex --scope global --output-root "$staging_root"
-python3 -m tooling.config diff \
-  --root . --adapter codex --scope global --target-root /absolute/path/to/home
+  --root . \
+  --manifest examples/level-4-provider-global/example.json \
+  --output-root /tmp/ai-agent-config-level-4
 ```
 
-The commands do not install or change global configuration.
+Inspect the exact output before any manual or provider-native installation. The
+renderer does not write a home directory or provider configuration directly.

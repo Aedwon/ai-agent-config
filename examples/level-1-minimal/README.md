@@ -1,11 +1,12 @@
 # Level 1: Minimal
 
-This example renders Codex project output with only the universal core and the
-minimal project template. Validate the repository, render to a temporary
-staging root, inspect `AGENTS.md`, and copy it manually. No external skill or
-global configuration is required.
+This manifest renders only the universal baseline plus minimal project rules.
 
 ```sh
-staging_root=$(mktemp -d)
-python3 -m tooling.config render --root . --adapter codex --output-root "$staging_root"
+python3 -m tooling.config render \
+  --root . \
+  --manifest examples/level-1-minimal/example.json \
+  --output-root /tmp/ai-agent-config-level-1
 ```
+
+No external skills or global configuration are required.

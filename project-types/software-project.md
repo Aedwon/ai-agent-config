@@ -13,7 +13,9 @@ automation, or configuration.
 ## Change safety
 
 - Establish a clean or understood baseline before implementation.
-- Write behavior tests at observable seams before changing behavior.
+- When an established test harness exists and behavior is testable at
+  reasonable cost, protect the change with observable tests. Otherwise retain
+  a reproducible baseline and explicit verification evidence.
 - Preserve backward compatibility unless the approved scope includes a
   migration.
 - Keep secrets, credentials, generated state, and machine-private paths out of
@@ -28,6 +30,6 @@ automation, or configuration.
 
 ## Completion
 
-- Run focused tests, the project suite, static validation, and required manual
-  checks.
+- Run the relevant focused checks, project suite where applicable, static
+  validation, and required manual checks.
 - Report actual evidence, skipped checks, and remaining risk.

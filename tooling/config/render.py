@@ -4,49 +4,21 @@ import os
 import re
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from tooling.config.catalog import load_adapter
+from tooling.config.composition import compose_bundle, load_manifest
 from tooling.config.paths import ConfigError, prepare_output_root, resolve_beneath
 from tooling.config.validate import validate
 
 
-CANONICAL_SOURCES = {
-    "project": (
-        "core/precedence.md",
-        "core/agent-contract.md",
-        "templates/minimal/AGENT_RULES.md",
-    ),
-    "global": (
-        "core/precedence.md",
-        "core/agent-contract.md",
-    ),
-}
 UNRESOLVED = re.compile(r"\{\{[^{}\n]+\}\}")
 
 
-def _markdown_body(text: str) -> str:
-    if not text.startswith("---\n"):
-        return text.strip()
-    closing = text.find("\n---\n", 4)
-    if closing == -1:
-        raise ConfigError("canonical Markdown has unterminated frontmatter")
-    return text[closing + 5 :].strip()
-
-
 def canonical_bundle(root: Path, scope: str = "project") -> str:
-    """Build the minimal canonical policy bundle in fixed order."""
+    """Build the standalone minimal bundle used when no manifest is selected."""
 
-    if scope not in CANONICAL_SOURCES:
-        raise ConfigError("scope must be project or global")
-    sections = []
-    for relative in CANONICAL_SOURCES[scope]:
-        path = resolve_beneath(root, relative, must_exist=True, label=relative)
-        try:
-            sections.append(_markdown_body(path.read_text(encoding="utf-8")))
-        except (OSError, UnicodeError) as error:
-            raise ConfigError("cannot read canonical source {}: {}".format(relative, error)) from error
-    return "\n\n---\n\n".join(sections) + "\n"
+    return compose_bundle(root, scope=scope)
 
 
 def _reject_destination_symlinks(output_root: Path, destination: Path) -> None:
@@ -89,6 +61,8 @@ def render(
     adapter_id: str,
     output_root: Path,
     scope: str = "project",
+    manifest_path: Optional[Path] = None,
+    profile_path: Optional[Path] = None,
 ) -> List[Path]:
     """Render one validated adapter into caller-declared staging."""
 
@@ -100,6 +74,16 @@ def render(
     adapter = load_adapter(source_root, adapter_id)
     if adapter.adapter_id != adapter_id:
         raise ConfigError("adapter id does not match requested adapter")
+    manifest = None
+    if manifest_path is not None:
+        manifest = load_manifest(Path(manifest_path))
+        if manifest["adapter"] != adapter_id:
+            raise ConfigError(
+                "manifest adapter '{}' does not match requested adapter '{}'".format(
+                    manifest["adapter"], adapter_id
+                )
+            )
+
     template_path = resolve_beneath(
         source_root, adapter.template_path, must_exist=True, label="adapter template"
     )
@@ -114,12 +98,28 @@ def render(
         output_path = adapter.path_for(scope)
     except ValueError as error:
         raise ConfigError(str(error)) from error
-    rendered = template.replace(
-        "{{CONTENT}}", canonical_bundle(source_root, scope).rstrip("\n")
+    if manifest is not None:
+        declared_output = manifest.get("output")
+        if declared_output is not None and declared_output != output_path:
+            raise ConfigError(
+                "manifest output '{}' does not match adapter output '{}'".format(
+                    declared_output, output_path
+                )
+            )
+    bundle = compose_bundle(
+        source_root,
+        scope=scope,
+        manifest_path=manifest_path,
+        profile_path=profile_path,
     )
+    rendered = template.replace("{{CONTENT}}", bundle.rstrip("\n"))
     unresolved = UNRESOLVED.search(rendered)
     if unresolved:
-        raise ConfigError("rendered output contains unresolved placeholder '{}'".format(unresolved.group(0)))
+        raise ConfigError(
+            "rendered output contains unresolved placeholder '{}'".format(
+                unresolved.group(0)
+            )
+        )
     if not rendered.endswith("\n"):
         rendered += "\n"
 

@@ -3,6 +3,7 @@
 import difflib
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 from tooling.config.catalog import load_adapter
 from tooling.config.paths import ConfigError, resolve_beneath
@@ -14,6 +15,8 @@ def diff(
     adapter_id: str,
     target_root: Path,
     scope: str = "project",
+    manifest_path: Optional[Path] = None,
+    profile_path: Optional[Path] = None,
 ) -> str:
     """Return a unified diff without creating or changing target files."""
 
@@ -47,7 +50,14 @@ def diff(
         raise ConfigError("cannot read target path: {}".format(error)) from error
 
     with tempfile.TemporaryDirectory(prefix="ai-agent-config-diff-") as directory:
-        rendered_path = render(source_root, adapter_id, Path(directory), scope=scope)[0]
+        rendered_path = render(
+            source_root,
+            adapter_id,
+            Path(directory),
+            scope=scope,
+            manifest_path=manifest_path,
+            profile_path=profile_path,
+        )[0]
         rendered_text = rendered_path.read_text(encoding="utf-8")
 
     if target_text == rendered_text:

@@ -4,22 +4,21 @@
   "scope": "project",
   "adapter": "codex",
   "output": "AGENTS.md",
-  "project_files": [
-    "templates/project/PROJECT_RULES.md",
-    "templates/project/DECISIONS.md",
-    "templates/project/HANDOFF.md",
-    "project-types/software-project.md"
+  "project_types": [
+    "software-project"
   ],
   "workflows": [
-    "workflows/planning.md",
-    "workflows/delegation.md",
-    "workflows/code-review.md",
-    "workflows/verification.md",
-    "workflows/handoff.md"
+    "planning",
+    "implementation",
+    "delegation",
+    "code-review",
+    "verification",
+    "handoff"
   ],
   "optional_skills": [
     "testing-at-seams"
   ],
   "isolation": "worktree-when-warranted",
+  "external_skills": "optional",
   "global_configuration": false
 }

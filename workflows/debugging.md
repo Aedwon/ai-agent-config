@@ -18,7 +18,10 @@ Find a defect's cause before proposing or applying a correction.
    it.
 5. Run the narrowest diagnostic that distinguishes competing causes.
 6. Repeat only when new evidence changes the hypothesis.
-7. Before a fix, add a failing regression test at an observable seam.
+7. When an established test harness exists and the defect is reasonably
+   reproducible there, add a failing regression test at an observable seam.
+   Otherwise preserve a minimal reproduction or equivalent before-fix
+   evidence.
 8. Apply the smallest correction and run focused, then broader, checks.
 
 ## Stop conditions
@@ -29,8 +32,8 @@ hypothesis without new evidence.
 
 ## Output
 
-A supported root cause, reproduction evidence, regression coverage, and a
-verified correction when mutation was authorized.
+A supported root cause, reproduction evidence, regression coverage where
+practical, and a verified correction when mutation was authorized.
 
 ## Optional accelerator
 

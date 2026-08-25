@@ -9,11 +9,17 @@ python3 -m tooling.config validate --root .
 ```
 
 The suite covers core separation, authorization invariants, catalog and adapter
-schemas, provenance, licenses, ownership classifications, strategy uniqueness,
+metadata, provenance, licenses, ownership classifications, strategy uniqueness,
 trigger uniqueness, path containment, forbidden destinations, placeholders,
-deterministic rendering, source immutability, migration mappings, and adoption
-examples. It uses only the Python standard library and does not require GitHub
-Actions.
+deterministic rendering, manifest and profile composition, source immutability,
+migration mappings, and adoption examples. It uses only the Python standard
+library and does not require GitHub Actions.
+
+`adapters/catalog.schema.json` is the published machine-readable adapter shape.
+The zero-dependency validator manually enforces the safety-critical constraints
+used by this repository, but it is not advertised as a complete JSON Schema
+engine. Maintainers should keep the manual checks and schema aligned when the
+adapter format changes.
 
 ## Recognition probes
 
@@ -38,3 +44,7 @@ failures, timeouts, and ambiguous output are `UNPROVEN`, not evidence of
 recognition and not a static adapter failure. Generic and Antigravity IDE
 adapters are manual and therefore remain `UNPROVEN` until a user follows their
 integration instructions. Antigravity CLI is not used to prove IDE discovery.
+
+Instruction discovery proves behavioral context loading, not hard security
+enforcement. Use provider-native permissions, hooks, settings, or sandboxing
+for controls that must be technically enforced.
