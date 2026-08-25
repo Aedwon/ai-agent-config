@@ -301,6 +301,8 @@ def _validate_adapter(root: Path, adapter_id: str, errors: List[str]) -> bytes:
         return b""
     for field in sorted(ADAPTER_REQUIRED - set(data)):
         errors.append("{}: missing required field '{}'".format(relative, field))
+    for field in sorted(set(data) - ADAPTER_REQUIRED):
+        errors.append("{}: unsupported field '{}'".format(relative, field))
     if data.get("schema_version") != 1:
         errors.append("{}: schema_version must be 1".format(relative))
     if data.get("id") != adapter_id:
@@ -370,8 +372,16 @@ def _validate_adapter(root: Path, adapter_id: str, errors: List[str]) -> bytes:
         executable_env = recognition.get("executable_env")
         if not isinstance(executable_env, str) or not re.fullmatch(r"AI_AGENT_CONFIG_[A-Z0-9_]+_EXECUTABLE", executable_env):
             errors.append("{}: recognition executable_env is invalid".format(relative))
-        if not isinstance(recognition.get("arguments"), list) or not all(isinstance(value, str) for value in recognition.get("arguments", [])):
+        arguments = recognition.get("arguments")
+        if not isinstance(arguments, list) or not all(isinstance(value, str) for value in arguments or []):
             errors.append("{}: recognition arguments must be strings".format(relative))
+        elif any(
+            value in {"--model", "-m", "--subscription"}
+            or value.startswith("--model=")
+            or "subscription" in value.lower()
+            for value in arguments
+        ):
+            errors.append("{}: recognition cannot fix a model or subscription".format(relative))
         if not isinstance(recognition.get("marker_label"), str) or not re.fullmatch(r"[A-Z][A-Z0-9_]+", recognition.get("marker_label", "")):
             errors.append("{}: recognition marker_label is invalid".format(relative))
     elif mode == "manual":

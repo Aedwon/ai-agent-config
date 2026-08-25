@@ -24,14 +24,35 @@ class RepositoryValidationTests(unittest.TestCase):
     def test_accepts_current_v2_repository(self):
         self.assertEqual(self.validate(REPOSITORY_ROOT), [])
 
-    def test_rejects_runtime_name_in_universal_core(self):
-        root = copy_repository(self)
-        core = root / "core" / "agent-contract.md"
-        core.write_text(core.read_text(encoding="utf-8") + "\nCodex\n", encoding="utf-8")
+    def test_rejects_runtime_and_commercial_terms_in_universal_core(self):
+        forbidden = (
+            "Aedwon",
+            "ChatGPT",
+            "Claude",
+            "Gemini",
+            "Antigravity",
+            "Codex",
+            "GPT",
+            "provider",
+            "model",
+            "subscription",
+            "quota",
+        )
+        for term in forbidden:
+            with self.subTest(term=term):
+                root = copy_repository(self)
+                core = root / "core" / "agent-contract.md"
+                core.write_text(
+                    core.read_text(encoding="utf-8") + "\n{}\n".format(term),
+                    encoding="utf-8",
+                )
 
-        errors = self.validate(root)
+                errors = self.validate(root)
 
-        self.assert_error_contains(errors, "core/agent-contract.md: forbidden universal term 'Codex'")
+                self.assert_error_contains(
+                    errors,
+                    "core/agent-contract.md: forbidden universal term '{}'".format(term),
+                )
 
     def test_rejects_unknown_catalog_strategy(self):
         root = copy_repository(self)
@@ -150,6 +171,28 @@ class RepositoryValidationTests(unittest.TestCase):
         errors = self.validate(root)
 
         self.assert_error_contains(errors, "missing required field 'label'")
+
+    def test_rejects_adapter_field_outside_schema(self):
+        root = copy_repository(self)
+        adapter_path = root / "adapters" / "codex" / "adapter.json"
+        adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+        adapter["private_install_path"] = ".codex/generated.md"
+        adapter_path.write_text(json.dumps(adapter), encoding="utf-8")
+
+        errors = self.validate(root)
+
+        self.assert_error_contains(errors, "unsupported field 'private_install_path'")
+
+    def test_rejects_fixed_model_in_recognition_arguments(self):
+        root = copy_repository(self)
+        adapter_path = root / "adapters" / "codex" / "adapter.json"
+        adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+        adapter["recognition"]["arguments"][0:0] = ["--model", "fixed-model"]
+        adapter_path.write_text(json.dumps(adapter), encoding="utf-8")
+
+        errors = self.validate(root)
+
+        self.assert_error_contains(errors, "recognition cannot fix a model or subscription")
 
 
 if __name__ == "__main__":
