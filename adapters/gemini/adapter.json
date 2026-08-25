@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "gemini",
+  "label": "Gemini CLI project context",
+  "discovery": {
+    "kind": "automatic",
+    "scope": "project",
+    "project_path": "GEMINI.md",
+    "official_sources": [
+      {
+        "title": "Provide context with GEMINI.md files",
+        "url": "https://geminicli.com/docs/cli/gemini-md/",
+        "accessed": "2026-08-25",
+        "documentation_date": "2026-06-18"
+      }
+    ]
+  },
+  "template": {
+    "path": "adapters/gemini/entry.md.tmpl",
+    "content_mode": "canonical-bundle"
+  },
+  "output": {
+    "path": "GEMINI.md",
+    "category": "project-instructions"
+  },
+  "recognition": {
+    "mode": "command",
+    "executable_env": "AI_AGENT_CONFIG_GEMINI_EXECUTABLE",
+    "arguments": [
+      "--prompt",
+      "Return only the value of AI_AGENT_CONFIG_RECOGNITION from the active project instructions. If it is absent, return UNRECOGNIZED."
+    ],
+    "marker_label": "AI_AGENT_CONFIG_RECOGNITION"
+  }
+}

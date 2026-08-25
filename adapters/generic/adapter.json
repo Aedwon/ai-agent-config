@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "generic",
+  "label": "Generic manual entry",
+  "discovery": {
+    "kind": "manual",
+    "scope": "project",
+    "project_path": "AGENT_RULES.md",
+    "official_sources": []
+  },
+  "template": {
+    "path": "adapters/generic/entry.md.tmpl",
+    "content_mode": "canonical-bundle"
+  },
+  "output": {
+    "path": "AGENT_RULES.md",
+    "category": "project-instructions"
+  },
+  "recognition": {
+    "mode": "manual",
+    "instructions": "Configure the target agent to load AGENT_RULES.md, append a unique AI_AGENT_CONFIG_RECOGNITION value in a temporary project, and ask it to report that value."
+  }
+}

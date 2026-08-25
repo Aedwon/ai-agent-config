@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "antigravity",
+  "label": "Google Antigravity workspace rule",
+  "discovery": {
+    "kind": "automatic",
+    "scope": "project",
+    "project_path": ".agents/rules/ai-agent-config.md",
+    "official_sources": [
+      {
+        "title": "Getting Started with Antigravity IDE",
+        "url": "https://codelabs.developers.google.com/getting-started-agy-ide",
+        "accessed": "2026-08-25"
+      }
+    ]
+  },
+  "template": {
+    "path": "adapters/antigravity/entry.md.tmpl",
+    "content_mode": "canonical-bundle"
+  },
+  "output": {
+    "path": ".agents/rules/ai-agent-config.md",
+    "category": "workspace-rule"
+  },
+  "recognition": {
+    "mode": "command",
+    "executable_env": "AI_AGENT_CONFIG_ANTIGRAVITY_EXECUTABLE",
+    "arguments": [
+      "--print",
+      "Return only the value of AI_AGENT_CONFIG_RECOGNITION from the active workspace rules. If it is absent, return UNRECOGNIZED.",
+      "--mode",
+      "plan",
+      "--sandbox"
+    ],
+    "marker_label": "AI_AGENT_CONFIG_RECOGNITION"
+  }
+}
