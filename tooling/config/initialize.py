@@ -145,6 +145,11 @@ def initialize(
             raise ConfigError("profile output must be outside the ai-agent-config source root")
         if created_profile.exists() or created_profile.is_symlink():
             raise ConfigError("refusing to overwrite existing path: {}".format(created_profile))
+        reserved = {output_path}
+        if project_rules_path is not None:
+            reserved.add(project_rules_path.resolve(strict=False))
+        if created_profile in reserved:
+            raise ConfigError("profile output must be distinct from manifest and project rules")
 
     manifest = {
         "version": 1,
