@@ -4,8 +4,10 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tests.support import REPOSITORY_ROOT, copy_repository
+from tooling.config.__main__ import _prompt_level
 
 
 class CommandLineTests(unittest.TestCase):
@@ -66,6 +68,10 @@ class CommandLineTests(unittest.TestCase):
             self.assertEqual(data["project_types"], ["software-project", "product-app"])
             self.assertEqual(data["workflows"], ["planning", "implementation", "verification"])
             self.assertEqual(sorted(path.name for path in project.iterdir()), ["PROJECT_RULES.md", "ai-agent-config.json"])
+
+    def test_interactive_level_defaults_to_normal_project(self):
+        with patch("builtins.input", return_value=""):
+            self.assertEqual(_prompt_level(), 2)
 
     def test_render_command_supports_explicit_global_staging(self):
         with tempfile.TemporaryDirectory() as directory:
