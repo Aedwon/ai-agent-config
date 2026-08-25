@@ -12,78 +12,93 @@ Pocock and Superpowers packages are optional accelerators.
 
 ## Quick start
 
-For most software projects, start with **Level 2**. Use Level 1 for a minimal
-trial, Level 3 for unusually agent-heavy work, and Level 4 only for explicit
-global/provider-native configuration.
-
-Clone the repository and initialize a manifest for the project you want an agent
-to work on:
+Clone the repository, then run guided setup against the project you want an
+agent to work on:
 
 ```sh
 git clone https://github.com/Aedwon/ai-agent-config.git
 cd ai-agent-config
 
-repo_root="$PWD"
-project_root=/absolute/path/to/your-project
-
-python3 -m tooling.config init \
-  --root "$repo_root" \
-  --output "$project_root/ai-agent-config.json"
+python3 -m tooling.config setup /absolute/path/to/your-project
 ```
 
-The initializer asks which provider you use, which adoption level fits the
-project, and—at Levels 2 and 3—which project type is closest. It creates only
-project-owned configuration files; it does not install provider configuration
-or modify a home directory.
+For most projects, accept the recommended **Normal** setup. The wizard asks for
+your provider, conservatively detects a specialized project type when strong
+local signals exist, creates project-owned configuration, previews changes on
+request, and installs exactly one generated provider file only after explicit
+confirmation. Existing provider files are not silently replaced.
 
-Render the selected configuration to a temporary staging directory:
+The normal first run does not require you to understand manifests, staging
+roots, workflow selection, or precedence layers. Those remain available through
+the lower-level commands for automation and advanced use.
+
+After setup, verify the installation at any time with:
 
 ```sh
-staging_root=$(mktemp -d)
-
-python3 -m tooling.config render \
-  --root "$repo_root" \
-  --manifest "$project_root/ai-agent-config.json" \
-  --output-root "$staging_root"
+python3 -m tooling.config doctor /absolute/path/to/your-project
 ```
 
-The command prints the exact staged provider file. Review it, optionally compare
-it with the receiving project, then copy that one generated file to the same
-relative location under the project root:
+`doctor` checks the canonical source, manifest, project rules, provider target,
+and whether the installed generated file still matches the current rendered
+configuration.
+
+Personal preferences are intentionally outside the first-run wizard. Create an
+optional private profile later with:
 
 ```sh
-python3 -m tooling.config diff \
-  --root "$repo_root" \
-  --manifest "$project_root/ai-agent-config.json" \
-  --target-root "$project_root"
+python3 -m tooling.config profile \
+  --output /explicit/private/path/profile.md
 ```
 
-`diff` is read-only and exits with status 1 when it finds a difference. That is
-enough to start. External skills, personal profiles, recognition probes, and
-global configuration are optional.
-
-For a fully manual Level 1 trial, you can skip the manifest and render directly
-with `--adapter codex` (or another supported adapter). See the
-[adoption guide](docs/adoption.md) for the longer form.
-
-## Four adoption levels
+## Setup modes
 
 1. **Minimal:** one project entry with the universal baseline. Best for a first
    trial, tiny repository, or low-coordination work.
-2. **Normal project:** compose project rules, a project-type overlay, and useful
-   neutral workflows. This is the recommended default for most repositories.
+2. **Normal:** compose project rules, a project-type overlay, and useful neutral
+   workflows. This is the recommended default for most repositories.
 3. **Agent-heavy:** add delegation, deeper review, handoff, and other controls
    when several agents, long-running work, or costly changes justify them.
 4. **Provider-native/global:** render the universal core to an explicit staging
    root, inspect the exact diff, install manually, and run an opt-in recognition
    probe when useful.
 
-Adoption level controls which capabilities are available to the agent. It does
+Setup mode controls which capabilities are available to the agent. It does
 **not** prescribe the same amount of ceremony for every task. The universal core
 requires the least elaborate per-task process that still provides sufficient
 safety, correctness, and verification: trivial work can execute directly,
 moderate work gets lightweight planning, complex work gets explicit planning and
 review, and high-risk work gets explicit authority and independent verification.
+
+The underlying manifest still records levels `1` through `4` for compatibility
+and deterministic composition. The guided UX calls them setup modes so a new
+user does not need to learn the internal terminology first.
+
+## Safe installation and updates
+
+Guided `setup` is the recommended path for a new project. For an existing
+manifest, compare and apply explicitly:
+
+```sh
+python3 -m tooling.config diff \
+  --root "$PWD" \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
+  --target-root /absolute/path/to/project
+
+python3 -m tooling.config apply \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
+  --target-root /absolute/path/to/project
+```
+
+`diff` is read-only. `apply` shows the generated change before mutation in
+interactive use. It creates a missing provider file after confirmation but will
+not replace a differing existing file unless replacement is explicitly
+confirmed or `--replace` is supplied. For non-interactive automation, `--yes`
+is explicit authorization; replacing an existing file still requires
+`--replace`.
+
+The lower-level `init`, `render`, `diff`, and `validate` commands remain
+available when you need deterministic staging, CI validation, or scripted
+composition. See the [adoption guide](docs/adoption.md) for details.
 
 ## How composition works
 
@@ -101,10 +116,10 @@ The first layer contains truthfulness, evidence, scope-bound mutation
 authority, state protection, and main-agent verification. Those invariants are
 not waivable by a lower layer or by ordinary workflow preferences.
 
-A manifest makes Levels 2 and 3 real composition instead of documentation-only
-lists. Provider adapters change only discovery mechanics; they do not change
-the selected policy body. Selected workflows are available procedures, not a
-mandatory pipeline for every task.
+A manifest makes Normal and Agent-heavy setup real composition instead of
+documentation-only lists. Provider adapters change only discovery mechanics;
+they do not change the selected policy body. Selected workflows are available
+procedures, not a mandatory pipeline for every task.
 
 ## Repository layers
 
@@ -120,8 +135,9 @@ mandatory pipeline for every task.
 - `adapters/` records discovery paths and renders thin provider entry files.
 - `skills/` catalogs optional external references and two attributed local
   adaptations. Core operation does not load them.
-- `tooling/` validates, initializes, renders, and compares configuration without
-  installing it.
+- `tooling/` validates, initializes, renders, compares, applies, diagnoses, and
+  guides first-run configuration without installing credentials or provider
+  software.
 
 ## Supported adapters
 
@@ -138,13 +154,25 @@ boundary. Provider-native hooks, permissions, settings, or sandboxing remain
 the place for controls that must be technically enforced.
 
 The renderer always requires an explicit source root and staging root. It does
-not discover a home directory, install configuration, copy credentials, or
-manage provider caches and plug-ins.
+not discover a home directory, copy credentials, or manage provider caches and
+plug-ins. Guided setup and `apply` may write only the selected generated
+provider file beneath an explicit project target, subject to overwrite guards.
 
-For Antigravity IDE, install the staged project output at
+For Antigravity IDE, install the generated project output at
 `.agents/rules/ai-agent-config.md`. If the workspace rule is not active
 automatically, enable it through the IDE. The separate `agy` CLI cannot prove
 IDE rule discovery, so the first recognition check is intentionally manual.
+
+## Project-type detection
+
+Guided setup only selects a specialized project type when it finds strong,
+local evidence. Current detection recognizes common Flutter/mobile product-app
+signals, common web-framework configuration or dependencies, and common Discord
+bot dependencies. When confidence is weak it falls back to the generic
+`software-project` baseline instead of guessing.
+
+The detected type is only a setup default. Interactive users can reject it, and
+advanced/non-interactive users can pass an explicit `--project-type`.
 
 ## Personal profiles
 
@@ -153,15 +181,41 @@ or cost routing. They cannot grant mutation authority or weaken the universal
 invariants.
 
 Keep real profiles outside this public repository when they reveal identity,
-paths, accounts, or commercial terms. Supply one explicitly with:
+paths, accounts, or commercial terms. Create a template explicitly with
+`profile`, then pass it when rendering, diffing, applying, or diagnosing:
 
 ```sh
-python3 -m tooling.config render \
-  --root "$repo_root" \
-  --manifest "$project_root/ai-agent-config.json" \
+python3 -m tooling.config profile \
+  --output /explicit/path/to/profile.md
+
+python3 -m tooling.config apply \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
   --profile /explicit/path/to/profile.md \
-  --output-root "$staging_root"
+  --target-root /absolute/path/to/project
 ```
+
+## Advanced commands
+
+The original deterministic primitives remain stable building blocks:
+
+```sh
+python3 -m tooling.config init \
+  --root /absolute/path/to/ai-agent-config \
+  --output /absolute/path/to/project/ai-agent-config.json
+
+python3 -m tooling.config render \
+  --root /absolute/path/to/ai-agent-config \
+  --manifest /absolute/path/to/project/ai-agent-config.json \
+  --output-root /absolute/path/to/staging
+
+python3 -m tooling.config validate \
+  --root /absolute/path/to/ai-agent-config
+```
+
+`init` validates the canonical source before it writes project-owned setup
+files, so a separate `validate` invocation is not required during ordinary
+first-run setup. `validate` remains useful for CI, repository maintenance, and
+explicit integrity checks.
 
 ## Documentation
 
