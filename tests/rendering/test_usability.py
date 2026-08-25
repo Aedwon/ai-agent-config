@@ -119,6 +119,25 @@ class FirstRunUsabilityTests(unittest.TestCase):
             self.assertIn("Generated provider file differs", drifted.stdout)
             self.assertIn("Configuration needs attention.", drifted.stdout)
 
+    def test_apply_rejects_in_root_destination_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            real_rules = project / "real-rules"
+            real_rules.mkdir()
+            (project / ".agents").symlink_to(real_rules, target_is_directory=True)
+
+            completed = self.run_command(
+                "setup",
+                str(project),
+                "--adapter",
+                "antigravity",
+                "--yes",
+            )
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("apply destination contains a symlink", completed.stderr)
+            self.assertFalse((real_rules / "rules" / "ai-agent-config.md").exists())
+
     def test_profile_command_is_explicit_and_refuses_overwrite(self):
         with tempfile.TemporaryDirectory() as directory:
             profile = Path(directory) / "profile.md"
