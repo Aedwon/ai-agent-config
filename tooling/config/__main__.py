@@ -162,6 +162,22 @@ def _prompt_choice(label: str, choices: Tuple[str, ...], default: str) -> str:
     raise ConfigError("invalid selection for {}: {}".format(label, raw))
 
 
+def _prompt_adapter(root: Path) -> str:
+    print("Provider:")
+    for index, adapter_id in enumerate(ADAPTER_CHOICES, start=1):
+        label = load_adapter(root, adapter_id).label
+        suffix = " [default]" if adapter_id == "codex" else ""
+        print("  {}. {}{}".format(index, label, suffix))
+    raw = input("> ").strip()
+    if not raw:
+        return "codex"
+    if raw.isdigit() and 1 <= int(raw) <= len(ADAPTER_CHOICES):
+        return ADAPTER_CHOICES[int(raw) - 1]
+    if raw in ADAPTER_CHOICES:
+        return raw
+    raise ConfigError("invalid provider selection: {}".format(raw))
+
+
 def _prompt_level() -> int:
     print("Setup mode:")
     print("  1. Minimal — first trial, tiny repository, or low-coordination work")
@@ -272,7 +288,7 @@ def _run_setup(args) -> int:
     print("\nProject")
     print("  {}".format(project))
 
-    adapter_id = args.adapter or _prompt_choice("Provider", ADAPTER_CHOICES, "codex")
+    adapter_id = args.adapter or _prompt_adapter(source_root)
 
     if args.level is not None:
         level = args.level
@@ -308,6 +324,14 @@ def _run_setup(args) -> int:
     scope = "global" if level == 4 else "project"
     output_path = adapter.path_for(scope)
     manifest_path = project / "ai-agent-config.json"
+    if manifest_path.exists() or manifest_path.is_symlink():
+        raise ConfigError(
+            "project already has ai-agent-config.json; use doctor to check it or apply to update the provider file"
+        )
+    rules_path = project / "PROJECT_RULES.md"
+    target_path = None
+    if scope == "project":
+        target_path = resolve_beneath(project, output_path, must_exist=False, label="target path")
 
     print("\nPlan")
     print("  Provider       {}".format(adapter.label))
@@ -317,13 +341,15 @@ def _run_setup(args) -> int:
         print("  Project type   {}".format(PROJECT_TYPE_LABELS.get(selected_type, selected_type)))
     print("  Manifest       {}".format(manifest_path))
     if level in {2, 3}:
-        print("  Project rules  {}".format(project / "PROJECT_RULES.md"))
+        rules_note = " (existing; preserved)" if rules_path.exists() else ""
+        print("  Project rules  {}{}".format(rules_path, rules_note))
     if scope == "global":
         print("  Provider file  configuration-only in guided setup")
     elif args.no_apply:
         print("  Provider file  not installed (--no-apply)")
     else:
-        print("  Provider file  {}".format(project / output_path))
+        target_note = " (existing; replacement requires review)" if target_path and target_path.exists() else ""
+        print("  Provider file  {}{}".format(project / output_path, target_note))
 
     if not args.yes:
         action = (
@@ -353,7 +379,6 @@ def _run_setup(args) -> int:
         print("Use render and diff with an explicit global target after review.")
         return 0
 
-    target_path = resolve_beneath(project, output_path, must_exist=False, label="target path")
     changes = diff(
         source_root,
         manifest["adapter"],
