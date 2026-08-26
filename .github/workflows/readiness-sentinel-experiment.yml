@@ -1,0 +1,36 @@
+name: Verify readiness sentinel experiment
+
+on:
+  push:
+    branches:
+      - experiment/github-cloudflare-readiness-sentinel
+    paths:
+      - 'experiments/github-cloudflare-readiness/**'
+      - '.github/workflows/readiness-sentinel-experiment.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: readiness-sentinel-experiment-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: experiments/github-cloudflare-readiness
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: experiments/github-cloudflare-readiness/package-lock.json
+      - run: npm install --package-lock-only
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
