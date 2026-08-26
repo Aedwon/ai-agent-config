@@ -8,6 +8,7 @@ export interface Env {
 
 export interface ReadinessEvent {
   deliveryId: string;
+  deliveryOrder: number;
   eventName: "push";
   repoFullName: string;
   branchName: string;
@@ -33,6 +34,7 @@ interface RepoPolicy {
 
 interface BranchState {
   status: ReadinessStatus;
+  delivery_order: number;
 }
 
 type ReadinessStatus = "READY_FOR_VERIFICATION" | "ATTENTION" | "BLOCKED";
@@ -108,8 +110,18 @@ export default {
       .bind(deliveryId, eventName, repoFullName, receivedAt)
       .run();
 
+    const storedDelivery = await env.DB.prepare(
+      "SELECT sequence FROM webhook_deliveries WHERE delivery_id = ?",
+    )
+      .bind(deliveryId)
+      .first<{ sequence: number }>();
+    if (!storedDelivery) {
+      return new Response("delivery state unavailable", { status: 503 });
+    }
+
     const event: ReadinessEvent = {
       deliveryId,
+      deliveryOrder: storedDelivery.sequence,
       eventName: "push",
       repoFullName,
       branchName,
@@ -160,7 +172,20 @@ async function evaluateBranch(event: ReadinessEvent, env: Env): Promise<void> {
     .first<RepoPolicy>();
 
   if (!policy) {
-    await markDelivery(event.deliveryId, "ignored", env);
+    await markDelivery(event.deliveryId, "ignored", null, env);
+    return;
+  }
+
+  const previous = await env.DB.prepare(
+    `SELECT status, delivery_order
+     FROM branch_state
+     WHERE repo_full_name = ? AND branch_name = ?`,
+  )
+    .bind(event.repoFullName, event.branchName)
+    .first<BranchState>();
+
+  if (previous && previous.delivery_order > event.deliveryOrder) {
+    await markDelivery(event.deliveryId, "ignored", "superseded by a newer delivery", env);
     return;
   }
 
@@ -191,6 +216,9 @@ async function evaluateBranch(event: ReadinessEvent, env: Env): Promise<void> {
   if (scopeViolations > 0) {
     reasons.push(`${scopeViolations} changed path(s) exceed the declared scope`);
   }
+  if (allowedPaths.length > 0 && files.length >= 300) {
+    reasons.push("GitHub changed-file cap reached; full scope compliance cannot be proven");
+  }
   if (compare.ahead_by === 0 && reasons.length === 0) {
     reasons.push("branch has no commits above the configured protected base");
   }
@@ -202,19 +230,14 @@ async function evaluateBranch(event: ReadinessEvent, env: Env): Promise<void> {
         ? "ATTENTION"
         : "BLOCKED";
 
-  const previous = await env.DB.prepare(
-    "SELECT status FROM branch_state WHERE repo_full_name = ? AND branch_name = ?",
-  )
-    .bind(event.repoFullName, event.branchName)
-    .first<BranchState>();
-
   const now = new Date().toISOString();
   await env.DB.prepare(
     `INSERT INTO branch_state
-     (repo_full_name, branch_name, head_sha, protected_base_sha, status, ahead_by, behind_by,
-      changed_files, scope_violations, reasons_json, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     (repo_full_name, branch_name, delivery_order, head_sha, protected_base_sha, status,
+      ahead_by, behind_by, changed_files, scope_violations, reasons_json, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(repo_full_name, branch_name) DO UPDATE SET
+       delivery_order = excluded.delivery_order,
        head_sha = excluded.head_sha,
        protected_base_sha = excluded.protected_base_sha,
        status = excluded.status,
@@ -223,11 +246,13 @@ async function evaluateBranch(event: ReadinessEvent, env: Env): Promise<void> {
        changed_files = excluded.changed_files,
        scope_violations = excluded.scope_violations,
        reasons_json = excluded.reasons_json,
-       updated_at = excluded.updated_at`,
+       updated_at = excluded.updated_at
+     WHERE excluded.delivery_order > branch_state.delivery_order`,
   )
     .bind(
       event.repoFullName,
       event.branchName,
+      event.deliveryOrder,
       event.headSha,
       policy.protected_base_sha,
       status,
@@ -240,11 +265,30 @@ async function evaluateBranch(event: ReadinessEvent, env: Env): Promise<void> {
     )
     .run();
 
-  await markDelivery(event.deliveryId, "completed", env);
+  const current = await env.DB.prepare(
+    `SELECT status, delivery_order
+     FROM branch_state
+     WHERE repo_full_name = ? AND branch_name = ?`,
+  )
+    .bind(event.repoFullName, event.branchName)
+    .first<BranchState>();
 
-  if (shouldNotify(previous?.status ?? null, status)) {
-    await sendDiscordSummary(event, status, reasons, compare, scopeViolations, env);
+  if (!current || current.delivery_order !== event.deliveryOrder) {
+    await markDelivery(event.deliveryId, "ignored", "superseded during evaluation", env);
+    return;
   }
+
+  let notificationError: string | null = null;
+  if (shouldNotify(previous?.status ?? null, status)) {
+    try {
+      await sendDiscordSummary(event, status, reasons, compare, scopeViolations, env);
+    } catch (error) {
+      notificationError = `notification failed: ${error instanceof Error ? error.message : "unknown error"}`;
+      console.error(notificationError);
+    }
+  }
+
+  await markDelivery(event.deliveryId, "completed", notificationError, env);
 }
 
 async function fetchCompare(
@@ -279,14 +323,15 @@ async function fetchCompare(
 async function markDelivery(
   deliveryId: string,
   status: "completed" | "ignored",
+  note: string | null,
   env: Env,
 ): Promise<void> {
   await env.DB.prepare(
     `UPDATE webhook_deliveries
-     SET status = ?, completed_at = ?, last_error = NULL
+     SET status = ?, completed_at = ?, last_error = ?
      WHERE delivery_id = ?`,
   )
-    .bind(status, new Date().toISOString(), deliveryId)
+    .bind(status, new Date().toISOString(), note, deliveryId)
     .run();
 }
 
