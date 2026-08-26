@@ -41,9 +41,11 @@ This evaluation is short, stateless between steps, and does not need human pause
 
 ## GitHub-driven deployment
 
-The experiment has a manual-only workflow at `.github/workflows/cloudflare-readiness-deploy.yml`. It does not deploy on push. A run must be started manually and the `confirm` input must equal `DEPLOY`.
+The experiment has an isolated deployment workflow at `.github/workflows/cloudflare-readiness-deploy.yml`.
 
-Before the first run, add these repository secrets to `Aedwon/ai-agent-config`:
+Because GitHub only exposes `workflow_dispatch` reliably when the workflow exists on the default branch, the experiment also supports an explicit branch-only deployment request: a push that changes only `experiments/github-cloudflare-readiness/.deploy-request`. Normal source pushes do not deploy. Once the required repository secrets exist, creating or updating that request file triggers provisioning/deployment without merging the experiment into `main`.
+
+Before the first deployment request, add these repository secrets to `Aedwon/ai-agent-config`:
 
 - `CLOUDFLARE_ACCOUNT_ID` — the one Cloudflare account ID for this experiment.
 - `CLOUDFLARE_API_TOKEN` — a Cloudflare API token scoped to that account with **Workers Scripts: Edit**, **D1: Edit**, and **Queues: Edit**.
