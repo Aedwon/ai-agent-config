@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: readiness-sentinel-experiment-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   verify:
@@ -34,3 +34,112 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run check:scripts
+
+  deploy:
+    needs: verify
+    if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'chore: request isolated Cloudflare readiness deployment' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: experiments/github-cloudflare-readiness
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      READINESS_WEBHOOK_SECRET: ${{ secrets.READINESS_WEBHOOK_SECRET }}
+      READINESS_GITHUB_TOKEN: ${{ secrets.READINESS_GITHUB_TOKEN }}
+      READINESS_DISCORD_WEBHOOK_URL: ${{ secrets.READINESS_DISCORD_WEBHOOK_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate required GitHub secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in \
+            CLOUDFLARE_ACCOUNT_ID \
+            CLOUDFLARE_API_TOKEN \
+            READINESS_WEBHOOK_SECRET \
+            READINESS_GITHUB_TOKEN
+          do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing required repository secret ${name}"
+              exit 1
+            fi
+          done
+
+      - name: Install experiment dependencies
+        run: |
+          npm install --package-lock-only
+          npm ci
+
+      - name: Create or reuse Cloudflare resources
+        run: node scripts/prepare-cloudflare.mjs
+
+      - name: Resolve public test protected base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          echo "READINESS_TEST_BASE_SHA=$(git rev-parse origin/main)" >> "$GITHUB_ENV"
+
+      - name: Prepare isolated public test policy
+        run: node scripts/write-test-policy.mjs
+
+      - name: Apply D1 migrations
+        run: npx wrangler d1 migrations apply github-readiness-sentinel --remote --config wrangler.ci.json
+
+      - name: Upsert public test policy
+        run: npx wrangler d1 execute github-readiness-sentinel --remote --config wrangler.ci.json --file policy.ci.sql
+
+      - name: Prepare Worker runtime secrets
+        run: node scripts/write-runtime-secrets.mjs
+
+      - name: Deploy Worker with bindings and secrets
+        env:
+          WRANGLER_OUTPUT_FILE_PATH: wrangler-output.ndjson
+        run: npx wrangler deploy --config wrangler.ci.json --secrets-file secrets.ci.json
+
+      - name: Resolve deployment target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$(jq -r 'select(.type == "deploy") | .targets[0] // empty' wrangler-output.ndjson | tail -n 1)"
+          if [[ -z "$target" ]]; then
+            echo "::error::Wrangler did not report a deployment target"
+            exit 1
+          fi
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "Deployment target: $target"
+
+      - name: Verify deployed health endpoint
+        shell: bash
+        run: curl --fail --silent --show-error "${{ steps.target.outputs.target }}/health"
+
+      - name: Write deployment summary
+        shell: bash
+        run: |
+          {
+            echo '## Readiness Sentinel deployed'
+            echo
+            echo '- Target: `${{ steps.target.outputs.target }}`'
+            echo '- D1: `github-readiness-sentinel`'
+            echo '- Queue: `github-readiness-events`'
+            echo '- Test repository: `Aedwon/ai-agent-config`'
+            echo '- Test branch: `experiment/github-cloudflare-readiness-sentinel`'
+            echo
+            echo 'The Worker is read-only against GitHub. Pantas is not configured.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove generated sensitive files
+        if: always()
+        shell: bash
+        run: rm -f secrets.ci.json wrangler.ci.json policy.ci.sql wrangler-output.ndjson
