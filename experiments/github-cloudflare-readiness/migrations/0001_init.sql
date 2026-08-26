@@ -1,5 +1,6 @@
 CREATE TABLE webhook_deliveries (
-  delivery_id TEXT PRIMARY KEY,
+  sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+  delivery_id TEXT NOT NULL UNIQUE,
   event_name TEXT NOT NULL,
   repo_full_name TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('accepted', 'completed', 'ignored', 'failed')),
@@ -29,6 +30,7 @@ CREATE INDEX idx_repo_policies_repo_enabled
 CREATE TABLE branch_state (
   repo_full_name TEXT NOT NULL,
   branch_name TEXT NOT NULL,
+  delivery_order INTEGER NOT NULL,
   head_sha TEXT NOT NULL,
   protected_base_sha TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('READY_FOR_VERIFICATION', 'ATTENTION', 'BLOCKED')),
