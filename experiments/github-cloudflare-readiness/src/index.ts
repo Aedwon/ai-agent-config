@@ -424,7 +424,11 @@ export async function verifyGitHubSignature(
     ["verify"],
   );
 
-  return crypto.subtle.verify("HMAC", key, signatureBytes, rawBody);
+  const signatureBuffer = signatureBytes.buffer.slice(
+    signatureBytes.byteOffset,
+    signatureBytes.byteOffset + signatureBytes.byteLength,
+  ) as ArrayBuffer;
+  return crypto.subtle.verify("HMAC", key, signatureBuffer, rawBody);
 }
 
 function hexToBytes(value: string): Uint8Array | null {
