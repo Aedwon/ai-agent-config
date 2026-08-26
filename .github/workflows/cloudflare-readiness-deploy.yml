@@ -98,6 +98,27 @@ jobs:
           WRANGLER_OUTPUT_FILE_PATH: wrangler-output.ndjson
         run: npx wrangler deploy --config wrangler.ci.json --secrets-file secrets.ci.json
 
+      - name: Ensure Worker is enabled on workers.dev
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/github-readiness-sentinel/subdomain"
+          state="$(curl --fail --silent --show-error "$api" -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")"
+          enabled="$(jq -r '.result.enabled // false' <<<"$state")"
+          echo "Worker workers.dev enabled before enforcement: $enabled"
+          if [[ "$enabled" != "true" ]]; then
+            state="$(curl --fail --silent --show-error -X POST "$api" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H 'Content-Type: application/json' \
+              --data '{"enabled":true,"previews_enabled":false}')"
+          fi
+          final_enabled="$(jq -r '.result.enabled // false' <<<"$state")"
+          if [[ "$final_enabled" != "true" ]]; then
+            echo "::error::Cloudflare reports the Worker is not enabled on workers.dev"
+            exit 1
+          fi
+          echo "Worker workers.dev enabled: true"
+
       - name: Resolve deployment target
         id: target
         shell: bash
@@ -113,7 +134,19 @@ jobs:
 
       - name: Verify deployed health endpoint
         shell: bash
-        run: curl --fail --silent --show-error "${{ steps.target.outputs.target }}/health"
+        run: |
+          set -euo pipefail
+          url="${{ steps.target.outputs.target }}/health"
+          for attempt in $(seq 1 18); do
+            if body="$(curl --fail --silent --show-error --connect-timeout 10 --max-time 15 "$url" 2>/tmp/readiness-health-error)"; then
+              echo "$body"
+              exit 0
+            fi
+            echo "Health attempt ${attempt}/18 failed: $(cat /tmp/readiness-health-error)"
+            if [[ "$attempt" -lt 18 ]]; then sleep 10; fi
+          done
+          echo "::error::Worker health endpoint did not become reachable after retries"
+          exit 1
 
       - name: Write deployment summary
         shell: bash
