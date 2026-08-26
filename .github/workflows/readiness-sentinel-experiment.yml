@@ -37,7 +37,7 @@ jobs:
 
   deploy:
     needs: verify
-    if: ${{ github.event_name == 'push' && github.event.head_commit.message == 'chore: request isolated Cloudflare readiness deployment' }}
+    if: ${{ github.event_name == 'push' && github.actor == 'Aedwon' && (contains(github.event.head_commit.added, 'experiments/github-cloudflare-readiness/.deploy-request') || contains(github.event.head_commit.modified, 'experiments/github-cloudflare-readiness/.deploy-request')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
