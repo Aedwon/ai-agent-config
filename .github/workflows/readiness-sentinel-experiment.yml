@@ -7,6 +7,7 @@ on:
     paths:
       - 'experiments/github-cloudflare-readiness/**'
       - '.github/workflows/readiness-sentinel-experiment.yml'
+      - '.github/workflows/cloudflare-readiness-deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -32,3 +33,4 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run check:scripts
