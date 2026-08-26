@@ -148,17 +148,106 @@ jobs:
           echo "::error::Worker health endpoint did not become reachable after retries"
           exit 1
 
+      - name: Exercise signed webhook, duplicate protection, Queue, and D1
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="${{ steps.target.outputs.target }}/webhooks/github"
+          delivery="smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          branch="experiment/github-cloudflare-readiness-sentinel"
+          payload="$(jq -nc \
+            --arg after "$GITHUB_SHA" \
+            --arg ref "refs/heads/${branch}" \
+            --arg repo "Aedwon/ai-agent-config" \
+            '{after:$after,deleted:false,ref:$ref,repository:{full_name:$repo}}')"
+          signature="$(PAYLOAD="$payload" node -e "const c=require('node:crypto'); process.stdout.write('sha256='+c.createHmac('sha256', process.env.READINESS_WEBHOOK_SECRET).update(process.env.PAYLOAD).digest('hex'))")"
+
+          bad_code="$(curl --silent --output /tmp/bad-body --write-out '%{http_code}' \
+            -X POST "$endpoint" \
+            -H 'Content-Type: application/json' \
+            -H 'X-GitHub-Event: push' \
+            -H 'X-GitHub-Delivery: smoke-invalid-signature' \
+            -H 'X-Hub-Signature-256: sha256=0000000000000000000000000000000000000000000000000000000000000000' \
+            --data-binary "$payload")"
+          if [[ "$bad_code" != "401" ]]; then
+            echo "::error::Expected invalid signature to return 401; got ${bad_code}: $(cat /tmp/bad-body)"
+            exit 1
+          fi
+          echo "Invalid signature rejected: 401"
+
+          first_code="$(curl --silent --output /tmp/first-body --write-out '%{http_code}' \
+            -X POST "$endpoint" \
+            -H 'Content-Type: application/json' \
+            -H 'X-GitHub-Event: push' \
+            -H "X-GitHub-Delivery: ${delivery}" \
+            -H "X-Hub-Signature-256: ${signature}" \
+            --data-binary "$payload")"
+          if [[ "$first_code" != "202" ]]; then
+            echo "::error::Expected signed delivery to return 202; got ${first_code}: $(cat /tmp/first-body)"
+            exit 1
+          fi
+          echo "Signed delivery accepted: 202"
+
+          duplicate_code="$(curl --silent --output /tmp/duplicate-body --write-out '%{http_code}' \
+            -X POST "$endpoint" \
+            -H 'Content-Type: application/json' \
+            -H 'X-GitHub-Event: push' \
+            -H "X-GitHub-Delivery: ${delivery}" \
+            -H "X-Hub-Signature-256: ${signature}" \
+            --data-binary "$payload")"
+          if [[ "$duplicate_code" != "200" ]]; then
+            echo "::error::Expected duplicate delivery to return 200; got ${duplicate_code}: $(cat /tmp/duplicate-body)"
+            exit 1
+          fi
+          echo "Duplicate delivery suppressed: 200"
+
+          sql="SELECT status, last_error FROM webhook_deliveries WHERE delivery_id = '${delivery}';"
+          delivery_status=""
+          for attempt in $(seq 1 12); do
+            result="$(npx wrangler d1 execute github-readiness-sentinel --remote --config wrangler.ci.json --json --command "$sql")"
+            delivery_status="$(jq -r '.[0].results[0].status // empty' <<<"$result")"
+            if [[ "$delivery_status" == "completed" ]]; then
+              break
+            fi
+            if [[ "$delivery_status" == "failed" ]]; then
+              error="$(jq -r '.[0].results[0].last_error // "unknown"' <<<"$result")"
+              echo "::error::Queue evaluation failed: $error"
+              exit 1
+            fi
+            echo "Waiting for Queue evaluation (${attempt}/12), current status: ${delivery_status:-unseen}"
+            sleep 5
+          done
+          if [[ "$delivery_status" != "completed" ]]; then
+            echo "::error::Signed delivery did not complete through the Queue"
+            exit 1
+          fi
+
+          state_sql="SELECT status, ahead_by, behind_by, scope_violations FROM branch_state WHERE repo_full_name = 'Aedwon/ai-agent-config' AND branch_name = '${branch}';"
+          state="$(npx wrangler d1 execute github-readiness-sentinel --remote --config wrangler.ci.json --json --command "$state_sql")"
+          readiness="$(jq -r '.[0].results[0].status // empty' <<<"$state")"
+          ahead="$(jq -r '.[0].results[0].ahead_by // empty' <<<"$state")"
+          behind="$(jq -r '.[0].results[0].behind_by // empty' <<<"$state")"
+          violations="$(jq -r '.[0].results[0].scope_violations // empty' <<<"$state")"
+          echo "Readiness result: ${readiness}; ahead=${ahead}; behind=${behind}; scope_violations=${violations}"
+          if [[ "$readiness" != "READY_FOR_VERIFICATION" || "$behind" != "0" || "$violations" != "0" ]]; then
+            echo "::error::End-to-end readiness state did not match the isolated test policy"
+            exit 1
+          fi
+
       - name: Write deployment summary
         shell: bash
         run: |
           {
-            echo '## Readiness Sentinel deployed'
+            echo '## Readiness Sentinel deployed and smoke-tested'
             echo
             echo '- Target: `${{ steps.target.outputs.target }}`'
             echo '- D1: `github-readiness-sentinel`'
             echo '- Queue: `github-readiness-events`'
             echo '- Test repository: `Aedwon/ai-agent-config`'
             echo '- Test branch: `experiment/github-cloudflare-readiness-sentinel`'
+            echo '- HMAC rejection: passed'
+            echo '- Duplicate suppression: passed'
+            echo '- Queue + Compare + D1 readiness: passed'
             echo
             echo 'The Worker is read-only against GitHub. Pantas is not configured.'
           } >> "$GITHUB_STEP_SUMMARY"
