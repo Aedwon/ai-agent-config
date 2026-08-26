@@ -39,7 +39,48 @@ The Queue keeps GitHub API/network retries out of the webhook request path. Queu
 
 This evaluation is short, stateless between steps, and does not need human pause/resume semantics or a strongly consistent per-workstream lock. A Worker + Queue + D1 is sufficient. Workflows and Durable Objects are reserved for later features that actually need those properties.
 
-## Local setup
+## GitHub-driven deployment
+
+The experiment has a manual-only workflow at `.github/workflows/cloudflare-readiness-deploy.yml`. It does not deploy on push. A run must be started manually and the `confirm` input must equal `DEPLOY`.
+
+Before the first run, add these repository secrets to `Aedwon/ai-agent-config`:
+
+- `CLOUDFLARE_ACCOUNT_ID` — the one Cloudflare account ID for this experiment.
+- `CLOUDFLARE_API_TOKEN` — a Cloudflare API token scoped to that account with **Workers Scripts: Edit**, **D1: Edit**, and **Queues: Edit**.
+- `READINESS_WEBHOOK_SECRET` — a strong random value that will also be configured as the GitHub webhook secret.
+- `READINESS_GITHUB_TOKEN` — a fine-grained GitHub token with read-only repository access to the test repository. The long-term version should replace this with GitHub App installation tokens.
+- `READINESS_DISCORD_WEBHOOK_URL` — optional. If absent, readiness state is still recorded but no Discord notification is sent.
+
+The deployment workflow then:
+
+1. reruns typecheck, tests, and script syntax checks;
+2. creates or reuses D1 database `github-readiness-sentinel`;
+3. creates or reuses Queue `github-readiness-events`;
+4. generates a temporary Wrangler configuration containing the real D1 UUID;
+5. applies D1 migrations;
+6. upserts an isolated policy for only `Aedwon/ai-agent-config:experiment/github-cloudflare-readiness-sentinel`;
+7. deploys the Worker and its runtime secrets in one Wrangler deployment;
+8. resolves the deployed URL from Wrangler's structured CI output;
+9. calls `/health` and fails the workflow if the deployed Worker does not respond successfully;
+10. removes generated secret/configuration files from the runner.
+
+The generated configuration and secret files are ignored by Git and are not committed.
+
+### Cloudflare token scope
+
+The experiment's CI token should be restricted to one Cloudflare account and only these account-level permissions:
+
+```text
+Workers Scripts: Edit
+D1: Edit
+Queues: Edit
+```
+
+Do not use a Global API Key. Do not grant DNS, zone, billing, account-admin, R2, KV, or unrelated permissions for this experiment.
+
+## Local setup alternative
+
+If local Wrangler access is preferred later:
 
 ```bash
 cd experiments/github-cloudflare-readiness
@@ -48,51 +89,17 @@ npx wrangler d1 create github-readiness-sentinel
 npx wrangler queues create github-readiness-events
 ```
 
-Put the returned D1 database ID into `wrangler.jsonc`, then apply the migration:
+Put the returned D1 database ID into a local Wrangler configuration, apply the migration, and set Worker secrets locally. Do not commit secret values.
 
-```bash
-npx wrangler d1 migrations apply github-readiness-sentinel --remote
-```
+## Public test policy first
 
-Add secrets with Wrangler; never commit their values:
+The GitHub deployment workflow automatically upserts an initial policy for the experiment branch in `Aedwon/ai-agent-config`. Pantas is deliberately not configured.
 
-```bash
-npx wrangler secret put GITHUB_WEBHOOK_SECRET
-npx wrangler secret put GITHUB_READ_TOKEN
-npx wrangler secret put DISCORD_WEBHOOK_URL
-```
-
-`DISCORD_WEBHOOK_URL` is optional. If omitted, evaluations still update D1 and generate no external notification.
-
-For the experiment, `GITHUB_READ_TOKEN` should be a fine-grained read-only token restricted to only the test repository or repositories. The long-term multi-repository version should replace this token with short-lived GitHub App installation tokens.
-
-## Configure a public test repository first
-
-Repository policy is operational data and is deliberately not committed to this public experiment branch.
-
-Example only:
-
-```sql
-INSERT INTO repo_policies (
-  repo_full_name,
-  branch_glob,
-  protected_base_sha,
-  allowed_paths_json,
-  priority
-) VALUES (
-  'example/repository',
-  'experiment/*',
-  '0123456789abcdef0123456789abcdef01234567',
-  '["src/**","test/**","README.md"]',
-  100
-);
-```
-
-An empty `allowed_paths_json` array means path scope checking is disabled for that policy.
+Repository policy is operational data in D1 rather than public source configuration. An empty `allowed_paths_json` array means path scope checking is disabled for that policy.
 
 ## GitHub webhook
 
-After deployment, configure a repository webhook pointing at:
+After the first successful Cloudflare deployment, configure a webhook on the public test repository pointing at:
 
 ```text
 https://<worker-host>/webhooks/github
@@ -101,7 +108,7 @@ https://<worker-host>/webhooks/github
 Use:
 
 - content type: `application/json`;
-- a strong random webhook secret matching `GITHUB_WEBHOOK_SECRET`;
+- the exact secret stored as `READINESS_WEBHOOK_SECRET`;
 - only the **Push** event for the first experiment;
 - HTTPS only.
 
@@ -110,7 +117,7 @@ Use:
 ## Status semantics
 
 - `READY_FOR_VERIFICATION` — deterministic base/scope checks passed. This is **not** a claim that tests or human review passed.
-- `ATTENTION` — the branch needs inspection but has no detected scope/base violation (for example, no commits above the configured base).
+- `ATTENTION` — the branch needs inspection but has no detected scope/base violation, for example no commits above the configured base.
 - `BLOCKED` — protected-base lineage, divergence, behind-state, scope checks, or an unprovable oversized comparison failed.
 
 The sentinel suppresses the initial healthy notification and repeated identical states. It notifies on a new problem and on recovery/state transitions.
@@ -120,23 +127,25 @@ The sentinel suppresses the initial healthy notification and repeated identical 
 - GitHub webhook HMAC-SHA256 is verified before parsing or accepting an event.
 - GitHub delivery IDs are stored as idempotency keys.
 - A monotonic D1 delivery order prevents stale Queue messages from replacing newer branch state.
-- GitHub API credentials are read-only and stored as Cloudflare secrets.
+- GitHub API credentials are read-only and stored as Cloudflare Worker secrets.
+- The Cloudflare deployment credential exists only as a GitHub repository secret and is not copied into the Worker runtime.
 - The Worker does not execute code from the repository or trust PR-controlled scripts.
 - Repository contents are not cloned or stored in Cloudflare.
 - Changed paths are used transiently for scope validation and are not persisted.
 - Comparisons at GitHub's changed-file cap fail closed when path-scope validation is enabled.
-- No GitHub write permission is required for this version.
+- No GitHub write permission is required for the Worker.
 - Queue retries cover transient failures in the readiness evaluation path.
-- Discord is deliberately a best-effort notification sink. A Discord failure is recorded on the delivery but does not roll back authoritative D1 readiness state; a later status view/digest can still surface it.
+- Discord is deliberately a best-effort notification sink. A Discord failure is recorded on the delivery but does not roll back authoritative D1 readiness state.
 
 ## Verification
 
 ```bash
 npm run typecheck
 npm test
+npm run check:scripts
 ```
 
-The included tests cover branch-ref parsing, path scopes, policy JSON validation, notification suppression, and GitHub webhook signature verification. The experiment branch also has a path-scoped verification workflow; it is intentionally separate from the repository's normal verification workflow.
+The included tests cover branch-ref parsing, path scopes, policy JSON validation, notification suppression, and GitHub webhook signature verification. The experiment branch also has a path-scoped verification workflow separate from the repository's normal verification workflow.
 
 ## Next increments
 
