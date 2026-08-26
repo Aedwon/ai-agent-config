@@ -1,6 +1,11 @@
 name: Deploy readiness sentinel to Cloudflare
 
 on:
+  push:
+    branches:
+      - experiment/github-cloudflare-readiness-sentinel
+    paths:
+      - 'experiments/github-cloudflare-readiness/.deploy-request'
   workflow_dispatch:
     inputs:
       confirm:
@@ -17,7 +22,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ inputs.confirm == 'DEPLOY' }}
+    if: ${{ github.event_name == 'push' || inputs.confirm == 'DEPLOY' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
