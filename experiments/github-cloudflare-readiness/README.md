@@ -136,7 +136,7 @@ npm run typecheck
 npm test
 ```
 
-The included tests cover branch-ref parsing, path scopes, policy JSON validation, notification suppression, and GitHub webhook signature verification.
+The included tests cover branch-ref parsing, path scopes, policy JSON validation, notification suppression, and GitHub webhook signature verification. The experiment branch also has a path-scoped verification workflow; it is intentionally separate from the repository's normal verification workflow.
 
 ## Next increments
 
