@@ -34,3 +34,45 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run check:scripts
+
+      - name: Verify actual GitHub webhook reached D1
+        if: ${{ github.event_name == 'push' && github.repository == 'Aedwon/ai-agent-config' }}
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${CLOUDFLARE_ACCOUNT_ID:?missing CLOUDFLARE_ACCOUNT_ID}"
+          : "${CLOUDFLARE_API_TOKEN:?missing CLOUDFLARE_API_TOKEN}"
+
+          database_id='23da1c6f-6652-45a6-b7e6-eeeb06c45fc3'
+          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${database_id}/query"
+          sql='SELECT head_sha, status, behind_by, scope_violations FROM branch_state WHERE repo_full_name = ? AND branch_name = ?;'
+          request="$(jq -nc \
+            --arg sql "$sql" \
+            --arg repo 'Aedwon/ai-agent-config' \
+            --arg branch 'experiment/github-cloudflare-readiness-sentinel' \
+            '{sql:$sql,params:[$repo,$branch]}')"
+
+          for attempt in $(seq 1 20); do
+            response="$(curl --fail --silent --show-error -X POST "$api" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H 'Content-Type: application/json' \
+              --data "$request")"
+            head_sha="$(jq -r '.result[0].results[0].head_sha // empty' <<<"$response")"
+            status="$(jq -r '.result[0].results[0].status // empty' <<<"$response")"
+            behind="$(jq -r '.result[0].results[0].behind_by // empty' <<<"$response")"
+            violations="$(jq -r '.result[0].results[0].scope_violations // empty' <<<"$response")"
+
+            if [[ "$head_sha" == "$GITHUB_SHA" && "$status" == 'READY_FOR_VERIFICATION' && "$behind" == '0' && "$violations" == '0' ]]; then
+              echo "Actual GitHub webhook confirmed in D1 for ${GITHUB_SHA}."
+              exit 0
+            fi
+
+            echo "Waiting for actual webhook (${attempt}/20): head=${head_sha:-unseen}, status=${status:-unseen}"
+            sleep 3
+          done
+
+          echo "::error::D1 never reached the workflow commit ${GITHUB_SHA}; the repository webhook may not be delivering pushes"
+          exit 1
