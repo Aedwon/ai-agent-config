@@ -24,15 +24,16 @@ GitHub push webhook
   -> Cloudflare Worker
      -> verify X-Hub-Signature-256
      -> deduplicate X-GitHub-Delivery in D1
+     -> assign a monotonic delivery order
      -> enqueue small event
         -> Cloudflare Queue consumer
            -> GitHub compare API (read only)
            -> deterministic readiness rules
-           -> D1 branch state
+           -> conditional D1 branch-state update
            -> Discord only when readiness state changes
 ```
 
-The Queue keeps GitHub API/network retries out of the webhook request path. D1 is the idempotency and derived-state store; GitHub remains the source of truth.
+The Queue keeps GitHub API/network retries out of the webhook request path. Queue delivery order is not assumed: D1 delivery ordering prevents an older queued push from overwriting a newer branch state. D1 is the idempotency and derived-state store; GitHub remains the source of truth.
 
 ## Why no Workflow or Durable Object yet
 
@@ -110,20 +111,23 @@ Use:
 
 - `READY_FOR_VERIFICATION` — deterministic base/scope checks passed. This is **not** a claim that tests or human review passed.
 - `ATTENTION` — the branch needs inspection but has no detected scope/base violation (for example, no commits above the configured base).
-- `BLOCKED` — protected-base lineage, divergence, behind-state, or scope checks failed.
+- `BLOCKED` — protected-base lineage, divergence, behind-state, scope checks, or an unprovable oversized comparison failed.
 
 The sentinel suppresses the initial healthy notification and repeated identical states. It notifies on a new problem and on recovery/state transitions.
 
-## Security model
+## Security and failure model
 
 - GitHub webhook HMAC-SHA256 is verified before parsing or accepting an event.
 - GitHub delivery IDs are stored as idempotency keys.
+- A monotonic D1 delivery order prevents stale Queue messages from replacing newer branch state.
 - GitHub API credentials are read-only and stored as Cloudflare secrets.
 - The Worker does not execute code from the repository or trust PR-controlled scripts.
 - Repository contents are not cloned or stored in Cloudflare.
 - Changed paths are used transiently for scope validation and are not persisted.
+- Comparisons at GitHub's changed-file cap fail closed when path-scope validation is enabled.
 - No GitHub write permission is required for this version.
-- Queue retries handle transient GitHub/Discord failures; failed delivery state remains visible in D1.
+- Queue retries cover transient failures in the readiness evaluation path.
+- Discord is deliberately a best-effort notification sink. A Discord failure is recorded on the delivery but does not roll back authoritative D1 readiness state; a later status view/digest can still surface it.
 
 ## Verification
 
@@ -141,4 +145,5 @@ The included tests cover branch-ref parsing, path scopes, policy JSON validation
 3. Add an authenticated read-only status endpoint/dashboard over D1.
 4. Add optional repository-specific rules such as required checks and integration-branch expectations.
 5. Add a low-frequency stale-branch digest using a Cron Trigger.
-6. Introduce Workflows only for durable multi-step/human-approval flows, and Durable Objects only if real concurrent workstream locking becomes necessary.
+6. Add a notification outbox if guaranteed Discord delivery becomes important.
+7. Introduce Workflows only for durable multi-step/human-approval flows, and Durable Objects only if real concurrent workstream locking becomes necessary.
